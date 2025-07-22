@@ -52,14 +52,13 @@ const UsersIcon = () => <>👥</>;
 const PackageIcon = () => <>📦</>;
 const DocumentPlusIcon = () => <>📝</>;
 const DocumentTextIcon = () => <>🧾</>;
-const PlusCircleIcon = () => <>➕</>;
-const ClipboardDocumentListIcon = () => <>🗒️</>;
 const UserGroupIcon = () => <>🧑‍💼</>; 
 const ChartBarIcon = () => <>📊</>;
 const CogIcon = () => <>⚙️</>;
 const SunIcon = () => <>☀️</>;
 const MoonIcon = () => <>🌙</>;
 const ArrowLeftOnRectangleIcon = () => <>🚪</>;
+const BankIcon = () => <>🏦</>;
 
 
 function App() {
@@ -91,7 +90,7 @@ function App() {
     email: 'Business Email',
     logoUrl: 'https://i.ibb.co/6R5f5tDh/49f94a12-6614-4dcb-a91e-cc1d4a232256.png',
     taxRate: 0,
-    lowStockThreshold: 5,
+    defaultBankAccountId: '',
   });
   const [tempBusinessSettings, setTempBusinessSettings] = useState(businessSettings);
 
@@ -101,7 +100,7 @@ function App() {
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
 
-  // --- User Management State (for Admin) ---
+  // --- User Management State (for Super Admin) ---
   const [allUsers, setAllUsers] = useState([]);
 
 
@@ -118,7 +117,6 @@ function App() {
   const [newProductGSM, setNewProductGSM] = useState('');
   const [newProductType, setNewProductType] = useState('sheet');
   const [newProductUnitPrice, setNewProductUnitPrice] = useState('');
-  const [newProductStock, setNewProductStock] = useState('');
   const [editingProduct, setEditingProduct] = useState(null);
 
   const [invoices, setInvoices] = useState([]);
@@ -127,20 +125,10 @@ function App() {
   const [totalPaid, setTotalPaid] = useState('');
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
-  const [selectedOrderIdForInvoice, setSelectedOrderIdForInvoice] = useState('');
+  const [selectedInvoiceSalesperson, setSelectedInvoiceSalesperson] = useState('');
   const [newPaymentAmount, setNewPaymentAmount] = useState('');
   const [invoiceStartDateFilter, setInvoiceStartDateFilter] = useState('');
   const [invoiceEndDateFilter, setInvoiceEndDateFilter] = useState('');
-
-  const [orders, setOrders] = useState([]);
-  const [selectedOrderCustomer, setSelectedOrderCustomer] = useState('');
-  const [selectedOrderTaker, setSelectedOrderTaker] = useState('');
-  const [orderProducts, setOrderProducts] = useState([]);
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [orderSearchQuery, setOrderSearchQuery] = useState('');
-  const [orderStatusFilter, setOrderStatusFilter] = useState('All');
-  const [orderStartDateFilter, setOrderStartDateFilter] = useState('');
-  const [orderEndDateFilter, setOrderEndDateFilter] = useState('');
 
   const [salespersons, setSalespersons] = useState([]);
   const [newSalespersonName, setNewSalespersonName] = useState('');
@@ -150,14 +138,24 @@ function App() {
   const [newSalespersonFixedBagRate, setNewSalespersonFixedBagRate] = useState(''); 
   const [editingSalesperson, setEditingSalesperson] = useState(null); 
 
+  // --- Bank Details States ---
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [newBankName, setNewBankName] = useState('');
+  const [newBankBranch, setNewBankBranch] = useState('');
+  const [newAccountName, setNewAccountName] = useState('');
+  const [newAccountNumber, setNewAccountNumber] = useState('');
+  const [newRoutingNumber, setNewRoutingNumber] = useState('');
+  const [editingBankAccount, setEditingBankAccount] = useState(null);
+  const [bankAccountSearchQuery, setBankAccountSearchQuery] = useState('');
+  
   // --- Pagination States ---
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentCustomerPage, setCurrentCustomerPage] = useState(1);
   const [currentProductPage, setCurrentProductPage] = useState(1);
   const [currentInvoicePage, setCurrentInvoicePage] = useState(1);
-  const [currentOrderPage, setCurrentOrderPage] = useState(1);
   const [currentSalespersonPage, setCurrentSalespersonPage] = useState(1);
   const [currentUserManagementPage, setCurrentUserManagementPage] = useState(1);
+  const [currentBankAccountsPage, setCurrentBankAccountsPage] = useState(1);
 
 
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
@@ -182,7 +180,7 @@ function App() {
       apiKey: "AIzaSyDSBkaERxrvKBhH8NiVdVJ5GOtKNIT3AyQ",
       authDomain: "bttal-project.firebaseapp.com",
       projectId: "bttal-project",
-      storageBucket: "bttal-project.appspot.com", // Corrected domain
+      storageBucket: "bttal-project.appspot.com", 
       messagingSenderId: "564894255609",
       appId: "1:564894255609:web:31c4f5429495bcbb0e9528",
       measurementId: "G-GKVXXZ059D"
@@ -208,8 +206,8 @@ function App() {
             const userData = userDocSnap.data();
             setUserAccountStatus(userData.status || 'pending'); 
             if (userData.status === 'approved') {
-              setUserRole(userData.role || 'viewer'); 
-              console.log("[Auth State Change] User approved. Role:", userData.role || 'viewer');
+              setUserRole(userData.role || 'admin'); 
+              console.log("[Auth State Change] User approved. Role:", userData.role || 'admin');
             } else {
               setUserRole('pending_viewer'); 
               console.log("[Auth State Change] User status:", userData.status || 'pending');
@@ -233,19 +231,19 @@ function App() {
   }, []);
 
   const collectionsToListen = [
-      { name: 'customers', setter: setCustomers, adminOnly: false, customerSpecific: true, customerIdField: 'customerId' },
-      { name: 'products', setter: setProducts, adminOnly: false }, 
-      { name: 'invoices', setter: setInvoices, adminOnly: false, customerSpecific: true, customerIdField: 'customerId' },
-      { name: 'orders', setter: setOrders, adminOnly: false, customerSpecific: true, customerIdField: 'customerId' },
-      { name: 'salespersons', setter: setSalespersons, adminOnly: true },
-      { name: 'users', setter: setAllUsers, adminOnly: true } 
+      { name: 'customers', setter: setCustomers, roles: ['admin', 'super_admin'] },
+      { name: 'products', setter: setProducts, roles: ['admin', 'super_admin'] }, 
+      { name: 'invoices', setter: setInvoices, roles: ['admin', 'super_admin'] },
+      { name: 'salespersons', setter: setSalespersons, roles: ['admin', 'super_admin'] },
+      { name: 'bank_accounts', setter: setBankAccounts, roles: ['admin', 'super_admin'] },
+      { name: 'users', setter: setAllUsers, roles: ['super_admin'] } 
   ];
 
   useEffect(() => {
-    if (!db || !userId || (userAccountStatus !== 'approved' && userRole !== 'admin' )) {
-      setCustomers([]); setProducts([]); setInvoices([]); setOrders([]);
-      setSalespersons([]); setAllUsers([]);
-      const defaultSettings = { name: 'BTTAL', officeAddress: 'Office Address', factoryAddress: 'Factory Address', phone: 'Business Phone', email: 'Business Email', logoUrl: 'https://i.ibb.co/6R5f5tDh/49f94a12-6614-4dcb-a91e-cc1d4a232256.png', taxRate: 0, lowStockThreshold: 5 };
+    if (!db || !userId || userAccountStatus !== 'approved' ) {
+      setCustomers([]); setProducts([]); setInvoices([]); 
+      setSalespersons([]); setAllUsers([]); setBankAccounts([]);
+      const defaultSettings = { name: 'BTTAL', officeAddress: 'Office Address', factoryAddress: 'Factory Address', phone: 'Business Phone', email: 'Business Email', logoUrl: 'https://i.ibb.co/6R5f5tDh/49f94a12-6614-4dcb-a91e-cc1d4a232256.png', taxRate: 0, defaultBankAccountId: '' };
       setBusinessSettings(defaultSettings);
       setTempBusinessSettings(defaultSettings); 
       if (pageLoading && userAccountStatus !== 'loading') setPageLoading(false); 
@@ -256,7 +254,7 @@ function App() {
     setPageLoading(true);
     setError(null); 
 
-    const dataSources = [ ...collectionsToListen.filter(c => userRole === 'admin' || !c.adminOnly).map(c => c.name), 'settings' ];
+    const dataSources = [ ...collectionsToListen.filter(c => c.roles.includes(userRole)).map(c => c.name), 'settings' ];
     const initialLoadStatus = Object.fromEntries(dataSources.map(name => [name, false]));
     let allInitialLoadsDone = false;
 
@@ -270,28 +268,11 @@ function App() {
     };
 
     const unsubscribes = collectionsToListen.map(colInfo => {
-      if (colInfo.adminOnly && userRole !== 'admin') return null; 
+      if (!colInfo.roles.includes(userRole)) return null; 
 
-      let q;
       const basePath = `artifacts/${db.app.options.appId}`;
-
-      if (colInfo.name === 'users' && userRole === 'admin') {
-        q = query(collection(db, `${basePath}/users`)); 
-      } else if (colInfo.customerSpecific && userRole === 'customer') {
-        if (colInfo.name === 'orders' || colInfo.name === 'invoices') {
-            q = query(collection(db, `${basePath}/users/${userId}/${colInfo.name}`));
-        } else {
-            q = query(collection(db, `${basePath}/users/${userId}/${colInfo.name}`));
-        }
-      } else { 
-        q = query(collection(db, `${basePath}/users/${userId}/${colInfo.name}`));
-      }
+      const q = query(collection(db, `${basePath}/${colInfo.name === 'users' ? '' : 'users/' + userId + '/'}${colInfo.name}`));
       
-      if (!q) { 
-        if (!initialLoadStatus[colInfo.name]) checkAllInitialLoads(colInfo.name);
-        return null;
-      }
-
       return onSnapshot(q, (snapshot) => {
         const fetchedData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         colInfo.setter(fetchedData);
@@ -310,7 +291,7 @@ function App() {
         setBusinessSettings(fetchedSettings);
       } else {
         console.log("[Data Fetch Effect] Settings doc not found, creating with defaults.");
-        const defaultSettings = { name: 'BTTAL', officeAddress: 'Office Address', factoryAddress: 'Factory Address', phone: 'Business Phone', email: 'Business Email', logoUrl: 'https://i.ibb.co/6R5f5tDh/49f94a12-6614-4dcb-a91e-cc1d4a232256.png', taxRate: 0, lowStockThreshold: 5 };
+        const defaultSettings = { name: 'BTTAL', officeAddress: 'Office Address', factoryAddress: 'Factory Address', phone: 'Business Phone', email: 'Business Email', logoUrl: 'https://i.ibb.co/6R5f5tDh/49f94a12-6614-4dcb-a91e-cc1d4a232256.png', taxRate: 0, defaultBankAccountId: '' };
         setDoc(settingsDocRef, defaultSettings).catch(err => console.error("Error creating default settings:", err));
         setBusinessSettings(defaultSettings);
       }
@@ -342,6 +323,74 @@ function App() {
     setTempBusinessSettings(businessSettings);
   }, [businessSettings]);
 
+const handleEditBankAccount = (account) => {
+  setEditingBankAccount(account);
+  setNewBankName(account.bankName);
+  setNewAccountName(account.accountName);
+  setNewAccountNumber(account.accountNumber);
+  setNewRoutingNumber(account.routingNumber || '');
+  setNewBankBranch(account.bankBranch || '');
+};
+
+const handleUpdateBankAccount = async () => {
+  if (!newBankName.trim() || !newAccountName.trim() || !newAccountNumber.trim()) {
+    showMessage("Please fill in all required fields (*)");
+    return;
+  }
+
+  if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) {
+    showMessage("Admin access required.");
+    return;
+  }
+
+  setPageLoading(true);
+  try {
+    const accountRef = doc(db, `artifacts/${db.app.options.appId}/users/${userId}/bank_accounts`, editingBankAccount.id);
+    await updateDoc(accountRef, {
+      bankName: newBankName.trim(),
+      bankBranch: newBankBranch.trim() || "",
+      accountName: newAccountName.trim(),
+      accountNumber: newAccountNumber.trim(),
+      routingNumber: newRoutingNumber.trim() || "",
+    });
+
+    setEditingBankAccount(null);
+    setNewBankName('');
+    setNewAccountName('');
+    setNewAccountNumber('');
+    setNewRoutingNumber('');
+    setNewBankBranch('');
+    showMessage("✅ Bank account updated successfully!");
+  } catch (error) {
+    console.error("Error updating bank account:", error);
+    setError("❌ Failed to update bank account: " + error.message);
+    showMessage(`Error: ${error.message}`, 5000);
+  } finally {
+    setPageLoading(false);
+  }
+};
+
+const handleDeleteBankAccount = async (accountId) => {
+  if (!window.confirm("Are you sure you want to delete this bank account?")) return;
+
+  if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) {
+    showMessage("Admin access required.");
+    return;
+  }
+
+  setPageLoading(true);
+  try {
+    const accountRef = doc(db, `artifacts/${db.app.options.appId}/users/${userId}/bank_accounts`, accountId);
+    await deleteDoc(accountRef);
+    showMessage("✅ Bank account deleted successfully!");
+  } catch (error) {
+    console.error("Error deleting bank account:", error);
+    setError("❌ Failed to delete bank account: " + error.message);
+    showMessage(`Error: ${error.message}`, 5000);
+  } finally {
+    setPageLoading(false);
+  }
+};
 
   const handleAuth = async (isSignUpMode) => {
     setPageLoading(true); setError(null);
@@ -351,11 +400,11 @@ function App() {
         await setDoc(doc(db, `artifacts/${auth.app.options.appId}/users`, userCredential.user.uid), {
           uid: userCredential.user.uid,
           email: userCredential.user.email,
-          role: 'pending_approval', 
+          role: 'admin', 
           status: 'pending',       
           createdAt: new Date().toISOString()
         });
-        showMessage('Account created! Awaiting admin approval.');
+        showMessage('Account created! Awaiting super admin approval.');
       } else { 
         await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
       }
@@ -380,8 +429,8 @@ function App() {
   };
 
   const handleUpdateSettings = async () => { 
-    if (!db || !userId || userRole !== 'admin') { 
-        showMessage(userRole !== 'admin' ? 'Admin access required to update settings.' : 'DB not ready.'); 
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { 
+        showMessage('Admin access required to update settings.'); 
         return; 
     }
     setPageLoading(true);
@@ -436,10 +485,58 @@ function App() {
       setPageLoading(false);
     }
   };
+  const handleAddBankAccount = async () => {
+  // Validate required fields
+  if (!newBankName.trim() || !newAccountName.trim() || !newAccountNumber.trim()) {
+    showMessage("Please fill in all required fields (*)");
+    return;
+  }
+
+  // Ensure user has permission
+  if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) {
+    showMessage("Admin access required to add bank accounts");
+    return;
+  }
+
+  setPageLoading(true); // Show loading indicator
+
+  try {
+    const bankAccountsRef = collection(
+      db, 
+      `artifacts/${db.app.options.appId}/users/${userId}/bank_accounts`
+    );
+
+    await addDoc(bankAccountsRef, {
+      bankName: newBankName.trim(),
+      bankBranch: newBankBranch.trim() || "",
+      accountName: newAccountName.trim(),
+      accountNumber: newAccountNumber.trim(),
+      routingNumber: newRoutingNumber.trim() || "",
+      createdAt: new Date(),
+      createdBy: userId
+    });
+
+    // Reset form fields
+    setNewBankName('');
+    setNewBankBranch('');
+    setNewAccountName('');
+    setNewAccountNumber('');
+    setNewRoutingNumber('');
+
+    showMessage("✅ Bank account added successfully!");
+  } catch (error) {
+    console.error("Error adding bank account:", error);
+    setError("❌ Failed to add bank account: " + error.message);
+    showMessage(`Error: ${error.message}`, 5000);
+  } finally {
+    setPageLoading(false); // Hide loading indicator
+  }
+};
+
 
   const handleAddCustomer = async () => {
     if (!newCustomerName || !newCustomerAddress || !newCustomerPhone) { showMessage('Fill required fields.'); return; }
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { showMessage('Admin access required.'); return; }
     setPageLoading(true);
     try {
       await addDoc(collection(db, `artifacts/${db.app.options.appId}/users/${userId}/customers`), {
@@ -463,7 +560,7 @@ function App() {
     } finally { setPageLoading(false); }
   };
   const handleDeleteCustomer = async (customerId) => {
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { showMessage('Admin access required.'); return; }
     setPageLoading(true);
     try { 
         await deleteDoc(doc(db, `artifacts/${db.app.options.appId}/users/${userId}/customers`, customerId)); 
@@ -484,32 +581,32 @@ function App() {
   }, [invoices]);
 
   const handleAddProduct = async () => {
-    if (!newProductGSM || !newProductUnitPrice || isNaN(parseFloat(newProductUnitPrice)) || isNaN(parseInt(newProductStock))) { showMessage('Valid GSM, Price, Stock needed.'); return; }
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
+    if (!newProductGSM || !newProductUnitPrice || isNaN(parseFloat(newProductUnitPrice))) { showMessage('Valid GSM and Price needed.'); return; }
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { showMessage('Admin access required.'); return; }
     setPageLoading(true);
     try {
       await addDoc(collection(db, `artifacts/${db.app.options.appId}/users/${userId}/products`), {
-        gsm: newProductGSM, type: newProductType, unitPrice: parseFloat(newProductUnitPrice), stock: parseInt(newProductStock), createdAt: new Date().toISOString(),
+        gsm: newProductGSM, type: newProductType, unitPrice: parseFloat(newProductUnitPrice), createdAt: new Date().toISOString(),
       });
-      setNewProductGSM(''); setNewProductType('sheet'); setNewProductUnitPrice(''); setNewProductStock(''); showMessage('Product added!');
+      setNewProductGSM(''); setNewProductType('sheet'); setNewProductUnitPrice(''); showMessage('Product added!');
     } catch (e) { console.error("Error adding product: ", e); setError("Failed: " + e.message);
     } finally { setPageLoading(false); }
   };
   const handleEditProduct = (product) => setEditingProduct({ ...product });
   const handleCancelEditProduct = () => setEditingProduct(null);
   const handleUpdateProduct = async () => {
-    if (!editingProduct.gsm || !editingProduct.unitPrice || isNaN(parseFloat(editingProduct.unitPrice)) || isNaN(parseInt(editingProduct.stock))) { showMessage('Valid GSM, Price, Stock needed.'); return; }
+    if (!editingProduct.gsm || !editingProduct.unitPrice || isNaN(parseFloat(editingProduct.unitPrice))) { showMessage('Valid GSM and Price needed.'); return; }
     if (!db || !userId) { showMessage('DB not ready.'); return; }
     setPageLoading(true);
     try {
       const productRef = doc(db, `artifacts/${db.app.options.appId}/users/${userId}/products`, editingProduct.id);
-      await updateDoc(productRef, { gsm: editingProduct.gsm, type: editingProduct.type, unitPrice: parseFloat(editingProduct.unitPrice), stock: parseInt(editingProduct.stock) });
+      await updateDoc(productRef, { gsm: editingProduct.gsm, type: editingProduct.type, unitPrice: parseFloat(editingProduct.unitPrice) });
       setEditingProduct(null); showMessage('Product updated!');
     } catch (e) { console.error("Error updating product: ", e); setError("Failed: " + e.message);
     } finally { setPageLoading(false); }
   };
   const handleDeleteProduct = async (productId) => {
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { showMessage('Admin access required.'); return; }
     setPageLoading(true);
     try { 
         await deleteDoc(doc(db, `artifacts/${db.app.options.appId}/users/${userId}/products`, productId)); 
@@ -585,13 +682,39 @@ function App() {
         }
         return sum;
     }, 0);
-    return { subTotal, taxAmount, totalWithTax, paidAmount: paidAmountNum, finalDue, totalSquareMeters };
+
+    let commissionAmount = 0;
+    const salesperson = salespersons.find(s => s.id === selectedInvoiceSalesperson);
+    if (salesperson && salesperson.commission) {
+        if (salesperson.commission.type === "percentage") {
+            commissionAmount = subTotal * ((salesperson.commission.percentageRate || 0) / 100);
+        } else if (salesperson.commission.type === "fixed") {
+            commissionAmount = invoiceProducts.reduce((acc, p) => {
+                let itemCommission = 0;
+                if (p.type === 'sheet' && salesperson.commission.fixedSheetRate != null) { 
+                    const quantity = parseFloat(p.quantity);
+                    const squareMeters = p.squareMeters; 
+                    if(!isNaN(quantity) && !isNaN(squareMeters)) {
+                         itemCommission = quantity * squareMeters * salesperson.commission.fixedSheetRate;
+                    }
+                } else if (p.type === 'bag' && salesperson.commission.fixedBagRate != null) { 
+                    const quantity = parseFloat(p.quantity);
+                    if(!isNaN(quantity)) {
+                        itemCommission = quantity * salesperson.commission.fixedBagRate;
+                    }
+                }
+                return acc + itemCommission;
+            }, 0);
+        }
+    }
+
+    return { subTotal, taxAmount, totalWithTax, paidAmount: paidAmountNum, finalDue, totalSquareMeters, commissionAmount };
   };
 
   const handleGenerateInvoice = async () => {
     if (!selectedCustomer) { showMessage('Please select a customer.'); return; }
     if (invoiceProducts.length === 0 || invoiceProducts.some(p => !p.productId || !p.quantity || (p.type === 'sheet' && (!p.length || !p.width)))) { showMessage('Please fill in all product details.'); return; }
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin access required.' : 'Database not ready.'); return; }
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { showMessage('Admin access required.'); return; }
     
     setPageLoading(true);
     try {
@@ -602,7 +725,8 @@ function App() {
         return; 
       }
       
-      const { subTotal, taxAmount, totalWithTax, paidAmount, finalDue, totalSquareMeters } = calculateInvoiceTotals();
+      const { subTotal, taxAmount, totalWithTax, paidAmount, finalDue, totalSquareMeters, commissionAmount } = calculateInvoiceTotals();
+      const salesperson = salespersons.find(s => s.id === selectedInvoiceSalesperson);
       
       const invoiceData = {
         invoiceNumber: `BTTAL-INV-${Date.now()}`,
@@ -622,6 +746,8 @@ function App() {
             squareMeters: p.type === 'sheet' ? p.squareMeters : null,
             unitPrice: parseFloat(p.unitPrice) || 0,
             lineTotal: p.lineTotal || 0,
+            pricePerUnit: parseFloat(p.unitPrice) || 0,
+            amount: p.lineTotal || 0
         })),
         subTotal,
         taxRate: businessSettings.taxRate,
@@ -630,48 +756,20 @@ function App() {
         totalPaid: paidAmount,
         finalDue,
         totalSquareMeters,
+        salespersonId: selectedInvoiceSalesperson || null,
+        salespersonName: salesperson ? salesperson.name : null,
+        commissionAmount: commissionAmount || 0,
         createdAt: new Date().toISOString(),
-        sourceOrderId: selectedOrderIdForInvoice || null,
       };
 
-      if (!selectedOrderIdForInvoice) {
-        await runTransaction(db, async (transaction) => {
-          const productUpdates = [];
-          for (const item of invoiceProducts) {
-            const productRef = doc(db, `artifacts/${db.app.options.appId}/users/${userId}/products`, item.productId);
-            const productDoc = await transaction.get(productRef);
-            if (!productDoc.exists()) {
-              throw new Error(`Product "${item.gsm || 'Selected Product'}" not found in stock!`);
-            }
-            const currentStock = productDoc.data().stock;
-            const quantityToDeduct = parseFloat(item.quantity);
-            if (isNaN(quantityToDeduct) || quantityToDeduct <= 0) {
-              throw new Error(`Invalid quantity for product "${item.gsm || 'Selected Product'}".`);
-            }
-            const newStock = currentStock - quantityToDeduct;
-            if (newStock < 0) {
-              throw new Error(`Insufficient stock for "${item.gsm || 'Selected Product'}". Available: ${currentStock}, Requested: ${quantityToDeduct}`);
-            }
-            productUpdates.push({ ref: productRef, newStock: newStock });
-          }
-          productUpdates.forEach(update => {
-            transaction.update(update.ref, { stock: update.newStock });
-          });
-          const newInvoiceRef = doc(collection(db, `artifacts/${db.app.options.appId}/users/${userId}/invoices`));
-          transaction.set(newInvoiceRef, invoiceData);
-        });
-        showMessage('Invoice saved & stock updated! Generating PDF...');
-      } else {
-        await addDoc(collection(db, `artifacts/${db.app.options.appId}/users/${userId}/invoices`), invoiceData);
-        showMessage('Invoice saved! Generating PDF...');
-      }
-
+      await addDoc(collection(db, `artifacts/${db.app.options.appId}/users/${userId}/invoices`), invoiceData);
+      showMessage('Invoice saved! Generating PDF...');
+      
       generatePrintableInvoice(invoiceData);
       setSelectedCustomer('');
       setInvoiceProducts([]);
       setTotalPaid('');
-      setSelectedOrderIdForInvoice('');
-      setNewPaymentAmount('');
+      setSelectedInvoiceSalesperson('');
     } catch (e) {
       console.error("Invoice generation error: ", e);
       setError("Invoice generation failed: " + e.message);
@@ -695,251 +793,306 @@ function App() {
     } catch (e) { console.error("Error updating invoice: ", e); setError("Failed: " + e.message);
     } finally { setPageLoading(false); }
   };
-  const handleSelectOrderForInvoice = (orderId) => {
-    setSelectedOrderIdForInvoice(orderId);
-    if (orderId) {
-      const order = orders.find(o => o.id === orderId);
-      if (order) {
-        setInvoiceProducts(order.products.map(p => ({ ...p, id: generateUniqueId() })));
-        setSelectedCustomer(order.customerId); setTotalPaid('');
-      }
-    } else { setInvoiceProducts([]); setSelectedCustomer(''); setTotalPaid(''); }
-  };
-
-  const generatePrintableInvoice = (invoice) => {
-    const logoHtml = businessSettings.logoUrl 
-      ? `<img src="${businessSettings.logoUrl}" style="max-height: 80px; max-width: 200px;" alt="Company Logo">` 
-      : '';
-
-    const productRows = invoice.products.map((p, i) => `
-        <tr>
-            <td>${i + 1}</td>
-            <td>${p.gsm}</td>
-            <td>${p.type === 'sheet' ? 'Sheet' : 'Bag'}</td>
-            <td>${p.quantity} ${p.type === 'sheet' ? 'Rolls' : 'Pcs'}</td>
-            <td>${p.type === 'sheet' && p.length != null ? p.length.toFixed(2) : '-'}</td>
-            <td>${p.type === 'sheet' && p.width != null ? p.width.toFixed(2) : '-'}</td>
-            <td>${p.type === 'sheet' && p.squareMeters != null ? p.squareMeters.toFixed(2) : '-'}</td>
-            <td class="text-right">${p.unitPrice.toFixed(2)}</td>
-            <td class="text-right">${p.lineTotal.toFixed(2)}</td>
-        </tr>
-    `).join('');
-
-    const totalsSection = `
-        <div class="totals">
-            ${invoice.totalSquareMeters > 0 ? `<p>Total Sheet Area: <strong>${invoice.totalSquareMeters.toFixed(2)} sq.m</strong></p>` : ''}
-            <p>Sub-total: <strong>৳ ${invoice.subTotal.toFixed(2)}</strong></p>
-            <p>Tax (${(invoice.taxRate || 0).toFixed(1)}%): <strong>৳ ${invoice.taxAmount.toFixed(2)}</strong></p>
-            <p>Total Amount: <strong>৳ ${invoice.totalAmount.toFixed(2)}</strong></p>
-            <p>Total Paid: <strong>৳ ${invoice.totalPaid.toFixed(2)}</strong></p>
-            <hr>
-            <p class="final-due">Final Due: <strong>৳ ${invoice.finalDue.toFixed(2)}</strong></p>
-        </div>
-    `;
-
-    const htmlContent = `
-        <html>
-            <head>
-                <title>Invoice ${invoice.invoiceNumber}</title>
-                <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; margin: 0; padding: 20px; color: #333; }
-                    .invoice-container { max-width: 800px; margin: auto; border: 1px solid #eee; padding: 30px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); }
-                    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-                    .header-left { text-align: left; }
-                    .header-right { text-align: right; }
-                    .header h1 { margin: 0 0 5px 0; font-size: 24px; }
-                    .header p { margin: 0; font-size: 12px; color: #555; }
-                    .invoice-details, .customer-details { display: flex; justify-content: space-between; margin-bottom: 20px; }
-                    .invoice-details div, .customer-details div { font-size: 14px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
-                    th { background-color: #f2f2f2; }
-                    .text-right { text-align: right; }
-                    .totals { float: right; width: 250px; margin-top: 20px; }
-                    .totals p { margin: 5px 0; display: flex; justify-content: space-between; }
-                    .totals hr { border: none; border-top: 1px solid #eee; margin: 5px 0; }
-                    .final-due { font-size: 16px; font-weight: bold; }
-                    .footer { text-align: center; margin-top: 100px; font-size: 12px; color: #777; }
-                    @media print {
-                        body { padding: 0; }
-                        .invoice-container { box-shadow: none; border: none; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="invoice-container">
-                    <div class="header">
-                        <div class="header-left">
-                           ${logoHtml}
-                        </div>
-                        <div class="header-right">
-                           <h1>${businessSettings.name}</h1>
-                           <p>${businessSettings.officeAddress || ''}</p>
-                           <p>Phone: ${businessSettings.phone} | Email: ${businessSettings.email}</p>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="invoice-details">
-                        <div>
-                            <strong>Invoice No:</strong> ${invoice.invoiceNumber}<br>
-                            <strong>Date:</strong> ${new Date(invoice.invoiceDate).toLocaleDateString()}
-                            ${invoice.sourceOrderId ? `<br><strong>Ref Order No:</strong> ${orders.find(o => o.id === invoice.sourceOrderId)?.orderNumber || ''}` : ''}
-                        </div>
-                        <div>
-                            <strong>Bill To:</strong><br>
-                            ${invoice.customerName}<br>
-                            ${invoice.customerAddress}<br>
-                            ${invoice.customerPhone}
-                        </div>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>SL</th><th>Product</th><th>Type</th><th>Qty</th><th>L(m)</th><th>W(m)</th><th>Sq.M</th><th class="text-right">Price(৳)</th><th class="text-right">Amount(৳)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${productRows}
-                        </tbody>
-                    </table>
-                    ${totalsSection}
-                    <div style="clear: both;"></div>
-                    <div class="footer">
-                        <p>Thank you for your business!</p>
-                    </div>
-                </div>
-                <script>
-                    window.onload = function() {
-                        window.print();
-                    }
-                </script>
-            </body>
-        </html>
-    `;
-    
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-  };
-
-  const addOrderProductRow = () => setOrderProducts([...orderProducts, { id: generateUniqueId(), productId: '', gsm: '', type: '', quantity: '', length: '', width: '', unitPrice: '', lineTotal: 0, squareMeters: 0 }]);
-  const removeOrderProductRow = (id) => setOrderProducts(orderProducts.filter(item => item.id !== id));
-  const handleOrderProductChange = (id, field, value) => setOrderProducts(prev => handleProductChangeLogic(prev, id, field, value));
-  const handleCreateOrder = async () => {
-    if (!selectedOrderCustomer || !selectedOrderTaker) { showMessage('Select customer & order taker.'); return; }
-    if (orderProducts.length === 0 || orderProducts.some(p => !p.productId || !p.quantity || (p.type === 'sheet' && (!p.length || !p.width)))) { showMessage('Add product details.'); return; }
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
-    setPageLoading(true);
-    try {
-      const customer = customers.find(c => c.id === selectedOrderCustomer); const orderTaker = salespersons.find(s => s.id === selectedOrderTaker);
-      if (!customer || !orderTaker) { showMessage('Customer/Salesperson not found.'); setPageLoading(false); return; }
-      
-      let totalOrderAmount = 0;
-      let commissionAmount = 0;
-      const processedOrderProducts = orderProducts.map(p => {
-        const productDetails = products.find(prod => prod.id === p.productId);
-        const lineCalc = handleProductChangeLogic([p], p.id, '', ''); // Recalculate to be sure
-        const currentLineTotal = lineCalc[0].lineTotal;
-        totalOrderAmount += currentLineTotal;
-        return { 
-            ...p, 
-            quantity: parseFloat(p.quantity),
-            length: p.type === 'sheet' ? parseFloat(p.length) : null,
-            width: p.type === 'sheet' ? parseFloat(p.width) : null,
-            squareMeters: p.type === 'sheet' ? (parseFloat(p.length) * parseFloat(p.width)) : null,
-            unitPrice: parseFloat(p.unitPrice),
-            lineTotal: currentLineTotal,
-         };
-      });
-
-      if (orderTaker.commission.type === "percentage") {
-        commissionAmount = totalOrderAmount * ((orderTaker.commission.percentageRate || 0) / 100);
-      } else if (orderTaker.commission.type === "fixed") {
-        commissionAmount = processedOrderProducts.reduce((acc, p) => {
-          let itemCommission = 0;
-          const productDetails = products.find(prod => prod.id === p.productId); 
-          if (productDetails) { 
-              if (productDetails.type === 'sheet' && orderTaker.commission.fixedSheetRate != null) { 
-                  const quantity = parseFloat(p.quantity);
-                  const squareMeters = p.squareMeters; 
-                  if(!isNaN(quantity) && !isNaN(squareMeters)) {
-                       itemCommission = quantity * squareMeters * orderTaker.commission.fixedSheetRate;
-                  }
-              } else if (productDetails.type === 'bag' && orderTaker.commission.fixedBagRate != null) { 
-                  const quantity = parseFloat(p.quantity);
-                  if(!isNaN(quantity)) {
-                      itemCommission = quantity * orderTaker.commission.fixedBagRate;
-                  }
-              }
-          }
-          return acc + itemCommission;
-        }, 0);
-      }
-
-
-      const orderData = {
-        orderNumber: `BTTAL-ORD-${Date.now()}`, orderDate: new Date().toISOString(), customerId: customer.id, customerName: customer.name, 
-        orderTakerId: orderTaker.id, orderTakerName: orderTaker.name, 
-        commissionDetails: orderTaker.commission, 
-        commissionAmount: commissionAmount,
-        products: processedOrderProducts,
-        totalAmount: totalOrderAmount, status: 'Pending', createdAt: new Date().toISOString(),
-      };
-
-      await runTransaction(db, async (transaction) => {
-        const productUpdates = [];
-        for (const item of processedOrderProducts) { 
-            const productRef = doc(db, `artifacts/${db.app.options.appId}/users/${userId}/products`, item.productId);
-            const productDoc = await transaction.get(productRef);
-            if (!productDoc.exists()) {
-            throw new Error(`Product "${item.gsm || 'Selected Product'}" not found in stock!`);
-            }
-            const currentStock = productDoc.data().stock;
-            const quantityToDeduct = item.quantity; 
-            if (isNaN(quantityToDeduct) || quantityToDeduct <= 0) {
-                throw new Error(`Invalid quantity for product "${item.gsm || 'Selected Product'}".`);
-            }
-            const newStock = currentStock - quantityToDeduct;
-            if (newStock < 0) {
-            throw new Error(`Insufficient stock for "${item.gsm || 'Selected Product'}". Available: ${currentStock}, Requested: ${quantityToDeduct}`);
-            }
-            productUpdates.push({ ref: productRef, newStock: newStock });
-        }
-        productUpdates.forEach(update => {
-            transaction.update(update.ref, { stock: update.newStock });
-        });
-        const newOrderRef = doc(collection(db, `artifacts/${db.app.options.appId}/users/${userId}/orders`));
-        transaction.set(newOrderRef, orderData);
-      });
-      showMessage('Order created & stock updated!');
-      setSelectedOrderCustomer(''); setSelectedOrderTaker(''); setOrderProducts([]);
-    } catch (e) { console.error("Order creation error: ", e.message); setError("Order creation failed: " + e.message); showMessage("Error: " + e.message, 5000);
-    } finally { setPageLoading(false); }
-  };
-  const handleEditOrder = (order) => setEditingOrder({ ...order });
-  const handleCancelEditOrder = () => setEditingOrder(null);
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    if (!db || !userId) { showMessage('DB not ready.'); return; }
-    setPageLoading(true);
-    try { await updateDoc(doc(db, `artifacts/${db.app.options.appId}/users/${userId}/orders`, orderId), { status: newStatus }); showMessage('Order status updated!');
-    } catch (e) { console.error("Error updating order status: ", e); setError("Failed: " + e.message);
-    } finally { setPageLoading(false); }
-  };
-  const handleDeleteOrder = async (orderId) => {
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
-    setPageLoading(true);
-    try { 
-        await deleteDoc(doc(db, `artifacts/${db.app.options.appId}/users/${userId}/orders`, orderId)); 
-        showMessage('Order deleted!');
-    } catch (e) { 
-        console.error("Error deleting order: ", e); 
-        setError("Failed to delete order: " + e.message);
-        showMessage("Error: " + e.message, 5000);
-    } finally { 
-        setPageLoading(false); 
-    }
-  };
   
+  const generatePrintableInvoice = (invoice) => {
+  // Format date with month name
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate()} ${d.toLocaleString('default', { month: 'long' })}, ${d.getFullYear()}`;
+  };
+
+  // Get bank details (uses first account if available)
+  const bankDetails = bankAccounts[0] || {
+    bankName: "Bank Name",
+    accountName: "Account Holder",
+    accountNumber: "1234567890",
+    routingNumber: "ROUTING123",
+    bankBranch: "Main Branch"
+  };
+
+  // Format numbers safely
+  const formatNumber = (value, decimals = 2) => {
+    return (value !== null && value !== undefined && !isNaN(value) 
+      ? parseFloat(value).toFixed(decimals) 
+      : '0.00');
+  };
+
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Invoice ${invoice.invoiceNumber}</title>
+        <style>
+          body { 
+            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            font-size: 12px;
+            line-height: 1.5;
+          }
+          .invoice-container { 
+            max-width: 800px;
+            margin: auto;
+            border: 1px solid #eee;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+          }
+          .header { 
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+          }
+          .header-left { text-align: left; }
+          .header-right { text-align: right; }
+          .header h1 { 
+            margin: 0 0 5px 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+          }
+          .header p { 
+            margin: 0;
+            font-size: 12px;
+            color: #555;
+          }
+          .invoice-details, .customer-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          }
+          .invoice-details div, .customer-details div {
+            font-size: 13px;
+            width: 48%;
+          }
+          table { 
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 12px;
+          }
+          th, td { 
+            border: 1px solid #ddd;
+            padding: 10px;
+            vertical-align: top;
+          }
+          th { 
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+          }
+          .text-right { text-align: right; }
+          .totals { 
+            float: right;
+            width: 280px;
+            margin-top: 20px;
+            font-size: 13px;
+          }
+          .totals p { 
+            margin: 6px 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+          }
+          .totals hr { 
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 8px 0;
+          }
+          .final-due { 
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+          }
+          .bank-details {
+  font-size: 12px;
+  margin-top: 30px;
+  text-align: left;
+  width: 100%;
+}
+
+.bank-details h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+          .bank-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px 20px;
+          }
+
+          .bank-info div {
+            min-width: 200px;
+          }
+          .bank-label {
+            color: #666;
+            font-size: 11px;
+            margin-bottom: 4px;
+          }
+          .bank-value {
+            font-weight: 500;
+            color: #333;
+          }
+          @media print {
+            body { padding: 0; }
+            .invoice-container { 
+              box-shadow: none;
+              border: none;
+              margin: 0;
+              max-width: 100%;
+            }
+            .header, .footer {
+              page-break-inside: avoid;
+              page-break-after: avoid;
+            }
+            .footer {
+              text-align: center;
+              font-size: 11px;
+              color: #888;
+              margin-top: 40px;
+              padding-top: 10px;
+              border-top: 1px solid #eee;
+              position: relative;
+              }
+
+            @media print {
+              .footer {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              width: 100%;
+              background: white;
+              }
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <div class="header">
+            <div class="header-left">
+              ${businessSettings.logoUrl 
+                ? `<img src="${businessSettings.logoUrl}" style="max-height: 80px; max-width: 200px; margin-bottom: 10px;" alt="Company Logo">`
+                : `<h2 style="font-size: 20px; font-weight: 600; margin-bottom: 5px;">${businessSettings.name}</h2>`
+              }
+            </div>
+            <div class="header-right">
+              <h1>${businessSettings.name}</h1>
+              <p>${businessSettings.officeAddress || ''}</p>
+              <p>Phone: ${businessSettings.phone || ''}</p>
+              <p>Email: ${businessSettings.email || ''}</p>
+            </div>
+          </div>
+
+          <div class="invoice-details">
+            <div>
+              <strong>Invoice No:</strong> ${invoice.invoiceNumber}<br>
+              <strong>Date:</strong> ${formatDate(invoice.invoiceDate)}<br>
+              ${invoice.salespersonName ? `<strong>Salesperson:</strong> ${invoice.salespersonName}<br>` : ''}
+            </div>
+            <div>
+              <strong>Bill To:</strong><br>
+              ${invoice.customerName}<br>
+              ${invoice.customerAddress}<br>
+              ${invoice.customerPhone}
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th class="text-center" style="width: 5%;">SL</th>
+                <th class="text-center" style="width: 8%;">Type</th>
+                <th class="text-center" style="width: 8%;">Qty</th>
+                <th class="text-center" style="width: 10%;">Lenght(m)</th>
+                <th class="text-center" style="width: 10%;">Width(m)</th>
+                <th class="text-center" style="width: 10%;">Sq.M</th>
+                <th class="text-right" style="width: 12%;">Price(৳)</th>
+                <th class="text-right" style="width: 14%;">Amount(৳)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoice.products.map((p, i) => `
+                <tr>
+                  <td class="text-center"> ${i + 1}</td>
+                  <td class="text-center"> ${p.type || 'N/A'}</td>
+                  <td class="text-center"> ${formatNumber(p.quantity)}</td>
+                  <td class="text-center"> ${p.length !== null ? formatNumber(p.length) : '-'}</td>
+                  <td class="text-center"> ${p.width !== null ? formatNumber(p.width) : '-'}</td>
+                  <td class="text-center"> ${formatNumber(p.squareMeters)}</td>
+                  <td class="text-right">৳ ${formatNumber(p.pricePerUnit)}</td>
+                  <td class="text-right">৳ ${formatNumber(p.amount)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="totals">
+    <p><strong>Total Sheet Area:</strong> <span> ${formatNumber(invoice.totalSquareMeters)}</span></p>
+  <p><strong>Subtotal:</strong> <span>৳ ${formatNumber(invoice.subTotal)}</span></p>
+  <p><strong>Tax (${formatNumber(invoice.taxRate * 100)}%):</strong> <span>৳ ${formatNumber(invoice.taxAmount)}</span></p>
+  <hr>
+  <p class="final-due">Total: <span>৳ ${formatNumber(invoice.totalAmount)}</span></p>
+  <p>Paid: <span>৳ ${formatNumber(invoice.totalPaid)}</span></p>
+  <p class="final-due">Due: <span>৳ ${formatNumber(invoice.finalDue)}</span></p>
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<!-- Bank details directly below due -->
+<div class="bank-details">
+  <h3>Bank Details</h3>
+  <p><strong>A/C Name</strong> : ${bankDetails.accountName || 'N/A'}</p>
+  <p><strong>A/C Number</strong> : ${bankDetails.accountNumber || 'N/A'}</p>
+  <p><strong>Bank Name</strong> : ${bankDetails.bankName || 'N/A'}</p>
+  <p><strong>Branch</strong> : ${bankDetails.bankBranch || 'N/A'}</p>
+  <p><strong>Routing Number</strong> : ${bankDetails.routingNumber || 'N/A'}</p>
+</div>
+
+          <div class="footer">
+            This is a computer-generated invoice. No signature required.<br>
+          </div>
+        </div>
+
+        <script>
+          (function() {
+            window.onload = function() {
+              window.print();
+              setTimeout(function() {
+                window.close();
+              }, 500);
+            };
+          })();
+        </script>
+      </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert('Please allow popups for this site to print invoices.');
+    return;
+  }
+
+  printWindow.document.open();
+  printWindow.document.write(htmlContent);
+
+printWindow.print();
+};
+
   const handleAddSalesperson = async () => {
     if (!newSalespersonName) { showMessage('Salesperson name is required.'); return; }
     let commissionPayload = {};
@@ -970,7 +1123,7 @@ function App() {
         showMessage('Invalid commission type.'); return;
     }
 
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { showMessage('Admin access required.'); return; }
     setPageLoading(true);
     try {
       await addDoc(collection(db, `artifacts/${db.app.options.appId}/users/${userId}/salespersons`), {
@@ -988,7 +1141,7 @@ function App() {
     } finally { setPageLoading(false); }
   };
   const handleDeleteSalesperson = async (salespersonId) => {
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { showMessage('Admin access required.'); return; }
     setPageLoading(true);
     try {
         await deleteDoc(doc(db, `artifacts/${db.app.options.appId}/users/${userId}/salespersons`, salespersonId));
@@ -1004,7 +1157,7 @@ function App() {
 
 
   const handleDeleteInvoice = async (invoiceId) => {
-    if (!db || !userId || userRole !== 'admin') { showMessage(userRole !== 'admin' ? 'Admin only.' : 'DB not ready.'); return; }
+    if (!db || !userId || (userRole !== 'admin' && userRole !== 'super_admin')) { showMessage('Admin access required.'); return; }
     setPageLoading(true);
     try {
         await deleteDoc(doc(db, `artifacts/${db.app.options.appId}/users/${userId}/invoices`, invoiceId));
@@ -1018,8 +1171,8 @@ function App() {
     }
   };
   const handleUpdateUserStatusAndRole = async (targetUserIdToUpdate, newStatus, newRole) => {
-    if (!db || !userId || userRole !== 'admin') {
-      showMessage('Admin access required.');
+    if (!db || !userId || userRole !== 'super_admin') {
+      showMessage('Super Admin access required.');
       return;
     }
     if (!targetUserIdToUpdate || !newStatus || !newRole) {
@@ -1046,18 +1199,21 @@ function App() {
 
   const renderCommissionReport = () => {
     console.log("[Render] renderCommissionReport called");
-    const commissionsBySalesperson = orders.reduce((acc, order) => {
-      if (order.orderTakerId) {
-        const existing = acc[order.orderTakerId] || { name: order.orderTakerName, totalCommission: 0, ordersCount: 0 };
-        existing.totalCommission += (order.commissionAmount || 0); existing.ordersCount++; acc[order.orderTakerId] = existing;
-      } return acc;
+    const commissionsBySalesperson = invoices.reduce((acc, invoice) => {
+      if (invoice.salespersonId) {
+        const existing = acc[invoice.salespersonId] || { name: invoice.salespersonName, totalCommission: 0, invoiceCount: 0 };
+        existing.totalCommission += (invoice.commissionAmount || 0); 
+        existing.invoiceCount++; 
+        acc[invoice.salespersonId] = existing;
+      } 
+      return acc;
     }, {});
     const commissionData = Object.values(commissionsBySalesperson);
     const exportCommissionsToCSV = () => { 
         let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Salesperson Name,Total Commission (৳),Orders Count\n";
+        csvContent += "Salesperson Name,Total Commission (৳),Invoice Count\n";
         commissionData.forEach(item => {
-            csvContent += `${item.name},${item.totalCommission.toFixed(2)},${item.ordersCount}\n`;
+            csvContent += `${item.name},${item.totalCommission.toFixed(2)},${item.invoiceCount}\n`;
         });
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -1087,7 +1243,7 @@ function App() {
                     <tr>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Salesperson Name</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Total Commission (৳)</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Orders Taken</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Invoices</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -1095,7 +1251,7 @@ function App() {
                     <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{item.name}</td>
                         <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳ {item.totalCommission.toFixed(2)}</td>
-                        <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{item.ordersCount}</td>
+                        <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{item.invoiceCount}</td>
                     </tr>
                     ))}
                 </tbody>
@@ -1173,24 +1329,16 @@ function App() {
     console.log("[Render] renderDashboard called");
     const totalBilledAmount = invoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
     const totalPaidAmount = invoices.reduce((sum, inv) => sum + (inv.totalPaid || 0), 0);
-    const totalCommissionPaid = orders.reduce((sum, order) => sum + (order.commissionAmount || 0), 0);
-    const lowStockProducts = products.filter(p => p.stock <= businessSettings.lowStockThreshold && p.stock > 0);
-    const outOfStockProducts = products.filter(p => p.stock === 0);
+    const totalCommissionPaid = invoices.reduce((sum, inv) => sum + (inv.commissionAmount || 0), 0);
+    
     return (
       <div className="p-4 md:p-6 space-y-6">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Dashboard</h2>
-        {(lowStockProducts.length > 0 || outOfStockProducts.length > 0) && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
-            <p className="font-bold">Inventory Alerts!</p>
-            {lowStockProducts.length > 0 && <p>Low stock (Threshold: {businessSettings.lowStockThreshold}): {lowStockProducts.map(p => `${p.gsm} (${p.stock})`).join(', ')}</p>}
-            {outOfStockProducts.length > 0 && <p>Out of Stock: {outOfStockProducts.map(p => p.gsm).join(', ')}</p>}
-          </div>
-        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow"><h3 className="text-sm text-gray-600 dark:text-gray-300">Total Customers</h3><p className="text-3xl font-bold text-indigo-600">{customers.length}</p></div>
           <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow"><h3 className="text-sm text-gray-600 dark:text-gray-300">Total Products</h3><p className="text-3xl font-bold text-green-600">{products.length}</p></div>
           <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow"><h3 className="text-sm text-gray-600 dark:text-gray-300">Total Invoices</h3><p className="text-3xl font-bold text-purple-600">{invoices.length}</p></div>
-          <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow"><h3 className="text-sm text-gray-600 dark:text-gray-300">Total Orders</h3><p className="text-3xl font-bold text-orange-600">{orders.length}</p></div>
+          <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow"><h3 className="text-sm text-gray-600 dark:text-gray-300">Total Salespersons</h3><p className="text-3xl font-bold text-orange-600">{salespersons.length}</p></div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
            <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow"><h3 className="text-sm text-gray-600 dark:text-gray-300">Total Billed</h3><p className="text-3xl font-bold text-blue-600">৳ {totalBilledAmount.toFixed(2)}</p></div>
@@ -1200,7 +1348,172 @@ function App() {
       </div>
     );
   };
+  const handleCancelEdit = () => {
+  // Reset the editing state
+  setEditingBankAccount(null);
 
+  // Clear all form fields
+  setNewBankName('');
+  setNewAccountName('');
+  setNewAccountNumber('');
+  setNewRoutingNumber('');
+  setNewBankBranch('');
+};
+  const renderBankAccounts = () => {
+  console.log("[Render] renderBankAccounts called");
+
+  const filteredBankAccounts = bankAccounts.filter(account =>
+    (account.bankName && account.bankName.toLowerCase().includes(bankAccountSearchQuery.toLowerCase())) ||
+    (account.accountNumber && account.accountNumber.includes(bankAccountSearchQuery))
+  );
+
+  const indexOfLastItem = currentBankAccountsPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredBankAccounts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(bankAccounts.length / itemsPerPage);
+
+  return (
+    <div className="p-4 md:p-6">
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Bank Accounts</h2>
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+        {/* Add bank account form */}
+        <div className="mb-4">
+          <input
+            type="text"
+            id="newBankName"
+            value={newBankName}
+            onChange={(e) => setNewBankName(e.target.value)}
+            placeholder="Bank Name *"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"
+          />
+        </div>
+        <div className="mb-4">
+          <input
+            type="text"
+            id="newAccountName"
+            value={newAccountName}
+            onChange={(e) => setNewAccountName(e.target.value)}
+            placeholder="Account Name *"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"
+          />
+        </div>
+        <div className="mb-4">
+          <input
+            type="text"
+            id="newAccountNumber"
+            value={newAccountNumber}
+            onChange={(e) => setNewAccountNumber(e.target.value)}
+            placeholder="Account Number *"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"
+          />
+        </div>
+        <div className="mb-4">
+          <input
+            type="text"
+            id="newRoutingNumber"
+            value={newRoutingNumber}
+            onChange={(e) => setNewRoutingNumber(e.target.value)}
+            placeholder="Routing Number (optional)"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"
+          />
+        </div>
+        <div className="mb-4">
+          <input
+            type="text"
+            id="newBankBranch"
+            value={newBankBranch}
+            onChange={(e) => setNewBankBranch(e.target.value)}
+            placeholder="Branch (optional)"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"
+          />
+        </div>
+        <button
+  onClick={editingBankAccount ? handleUpdateBankAccount : handleAddBankAccount}
+  className="mb-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+>
+  {editingBankAccount ? "Update Bank Account" : "Add New Bank Account"}
+</button>
+
+{/* Add Cancel Button */}
+{editingBankAccount && (
+  <button
+    onClick={handleCancelEdit}
+    className="ml-2 mb-4 px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500"
+  >
+    Cancel
+  </button>
+)}
+
+        {/* Search input below the Add button */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Search by bank name or account number"
+            value={bankAccountSearchQuery}
+            onChange={(e) => setBankAccountSearchQuery(e.target.value)}
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"
+          />
+        </div>
+
+        {/* Table of existing bank accounts */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto text-left">
+            <thead className="bg-gray-100 dark:bg-gray-700">
+              <tr>
+                <th className="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">Bank Name</th>
+                <th className="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">Account Number</th>
+                <th className="px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {currentItems.map(account => (
+                <tr key={account.id}>
+                  <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{account.bankName}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{account.accountNumber}</td>
+                  <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200 flex space-x-2">
+                    <button
+                      onClick={() => handleEditBankAccount(account)}
+                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBankAccount(account.id)}
+                      className="text-red-600 hover:text-red-900 dark:text-red-400"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentBankAccountsPage(prev => Math.max(1, prev - 1))}
+            disabled={currentBankAccountsPage === 1}
+            className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Page {currentBankAccountsPage} of {totalPages || 1}
+          </span>
+          <button
+            onClick={() => setCurrentBankAccountsPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentBankAccountsPage === totalPages}
+            className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
   const renderCustomers = () => {
     console.log("[Render] renderCustomers called");
     const filteredCustomers = customers.filter(customer =>
@@ -1241,7 +1554,7 @@ function App() {
             <input type="text" placeholder="Phone" value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
             <input type="email" placeholder="Email (Optional)" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
           </div>
-          <button onClick={handleAddCustomer} className="w-full bg-indigo-600 text-white p-3 rounded-md hover:bg-indigo-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || userRole !== 'admin'}>{pageLoading ? 'Adding...' : 'Add Customer'}</button>
+          <button onClick={handleAddCustomer} className="w-full bg-indigo-600 text-white p-3 rounded-md hover:bg-indigo-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || (userRole !== 'admin' && userRole !== 'super_admin')}>{pageLoading ? 'Adding...' : 'Add Customer'}</button>
         </div>
         <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <input type="text" placeholder="Search customers by name, phone, or email..." value={customerSearchQuery} onChange={(e) => {setCustomerSearchQuery(e.target.value); setCurrentCustomerPage(1);}} className="w-full sm:w-2/3 p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100" />
@@ -1280,8 +1593,8 @@ function App() {
                           <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳{summary.totalPaid.toFixed(2)}</td>
                           <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳{summary.totalDue.toFixed(2)}</td>
                           <td className="py-3 px-4 text-sm whitespace-nowrap">
-                            <button onClick={() => handleEditCustomer(customer)} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 mr-1 transition-colors" disabled={userRole !== 'admin'}>Edit</button>
-                            <button onClick={() => handleDeleteCustomer(customer.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={userRole !== 'admin'}>Delete</button>
+                            <button onClick={() => handleEditCustomer(customer)} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 mr-1 transition-colors" disabled={(userRole !== 'admin' && userRole !== 'super_admin')}>Edit</button>
+                            <button onClick={() => handleDeleteCustomer(customer.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={(userRole !== 'admin' && userRole !== 'super_admin')}>Delete</button>
                           </td>
                         </tr>
                         {editingCustomer && editingCustomer.id === customer.id && (
@@ -1327,9 +1640,9 @@ function App() {
 
      const exportProductsToCSV = () => {
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "GSM,Type,Unit Price (৳),Stock\n";
+      csvContent += "GSM,Type,Unit Price (৳)\n";
       products.forEach(product => {
-        csvContent += `${product.gsm},${product.type === 'sheet' ? 'Sheet' : 'Bag'},${product.unitPrice.toFixed(2)},${product.stock}\n`;
+        csvContent += `${product.gsm},${product.type === 'sheet' ? 'Sheet' : 'Bag'},${product.unitPrice.toFixed(2)}\n`;
       });
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
@@ -1345,16 +1658,15 @@ function App() {
         <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Product Management</h2>
          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8">
           <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Add New Product</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <input type="text" placeholder="GSM (e.g., 150 GSM PP)" value={newProductGSM} onChange={(e) => setNewProductGSM(e.target.value)} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"/>
             <select value={newProductType} onChange={(e) => setNewProductType(e.target.value)} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700">
               <option value="sheet">Sheet</option>
               <option value="bag">Bag</option>
             </select>
             <input type="number" placeholder={`Unit Price (৳ per ${newProductType === 'sheet' ? 'sq. meter' : 'piece'})`} value={newProductUnitPrice} onChange={(e) => setNewProductUnitPrice(e.target.value)} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"/>
-            <input type="number" placeholder="Stock Quantity" value={newProductStock} onChange={(e) => setNewProductStock(e.target.value)} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"/>
           </div>
-          <button onClick={handleAddProduct} className="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || userRole !== 'admin'}>{pageLoading ? 'Adding...' : 'Add Product'}</button>
+          <button onClick={handleAddProduct} className="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || (userRole !== 'admin' && userRole !== 'super_admin')}>{pageLoading ? 'Adding...' : 'Add Product'}</button>
         </div>
 
         <div className="mb-4 flex justify-end">
@@ -1371,7 +1683,6 @@ function App() {
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">GSM</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Type</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Unit Price (৳)</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Stock</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -1382,23 +1693,21 @@ function App() {
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap">{product.gsm}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{product.type === 'sheet' ? 'Sheet' : 'Bag'}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳ {product.unitPrice.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{product.stock}</td>
                     <td className="py-3 px-4 text-sm whitespace-nowrap">
-                      <button onClick={() => handleEditProduct(product)} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 mr-1 transition-colors" disabled={userRole !== 'admin'}>Edit</button>
-                      <button onClick={() => handleDeleteProduct(product.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={userRole !== 'admin'}>Delete</button>
+                      <button onClick={() => handleEditProduct(product)} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 mr-1 transition-colors" disabled={(userRole !== 'admin' && userRole !== 'super_admin')}>Edit</button>
+                      <button onClick={() => handleDeleteProduct(product.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={(userRole !== 'admin' && userRole !== 'super_admin')}>Delete</button>
                     </td>
                   </tr>
                   {editingProduct && editingProduct.id === product.id && (
-                    <tr className="bg-indigo-50 dark:bg-indigo-900/30"><td colSpan="5" className="p-4">
+                    <tr className="bg-indigo-50 dark:bg-indigo-900/30"><td colSpan="4" className="p-4">
                       <h4 className="text-md font-semibold mb-3 text-gray-800 dark:text-gray-100">Edit Product: {editingProduct.gsm}</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                         <input type="text" placeholder="GSM" value={editingProduct.gsm} onChange={(e) => setEditingProduct({ ...editingProduct, gsm: e.target.value })} className="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700"/>
                         <select value={editingProduct.type} onChange={(e) => setEditingProduct({ ...editingProduct, type: e.target.value })} className="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700">
                           <option value="sheet">Sheet</option>
                           <option value="bag">Bag</option>
                         </select>
                         <input type="number" placeholder="Unit Price" value={editingProduct.unitPrice} onChange={(e) => setEditingProduct({ ...editingProduct, unitPrice: e.target.value })} className="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700"/>
-                        <input type="number" placeholder="Stock" value={editingProduct.stock} onChange={(e) => setEditingProduct({ ...editingProduct, stock: e.target.value })} className="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700"/>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={handleUpdateProduct} className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700 transition-colors" disabled={pageLoading}>{pageLoading ? 'Saving...' : 'Save Changes'}</button>
@@ -1426,7 +1735,7 @@ function App() {
 
   const renderCreateInvoice = () => {
     console.log("[Render] renderCreateInvoice called");
-    const { subTotal, taxAmount, totalWithTax, paidAmount, finalDue, totalSquareMeters } = calculateInvoiceTotals();
+    const { subTotal, taxAmount, totalWithTax, paidAmount, finalDue, totalSquareMeters, commissionAmount } = calculateInvoiceTotals();
     const invoicePreviewData = {
       invoiceNumber: 'PREVIEW',
       invoiceDate: new Date().toISOString(),
@@ -1442,30 +1751,79 @@ function App() {
       totalPaid: paidAmount,
       finalDue: finalDue,
       totalSquareMeters: totalSquareMeters,
+      salespersonName: salespersons.find(s => s.id === selectedInvoiceSalesperson)?.name || null,
+      commissionAmount: commissionAmount,
     };
 
     const handlePrintPreview = () => {
-      generatePrintableInvoice(invoicePreviewData);
-    };
+  if (!invoiceProducts.length) {
+    showMessage("Add at least one product to the invoice.");
+    return;
+  }
+
+  const invoicePreviewData = {
+    invoiceNumber: 'PREVIEW',
+    invoiceDate: new Date().toISOString(),
+    customerName: selectedCustomer ? customers.find(c => c.id === selectedCustomer)?.name : 'N/A',
+    customerAddress: selectedCustomer ? customers.find(c => c.id === selectedCustomer)?.address : 'N/A',
+    customerPhone: selectedCustomer ? customers.find(c => c.id === selectedCustomer)?.phone : 'N/A',
+    customerEmail: selectedCustomer ? customers.find(c => c.id === selectedCustomer)?.email : '',
+    products: invoiceProducts.map(p => ({
+      productName: p.productName || 'N/A',
+      type: p.type || 'sheet',
+      quantity: parseFloat(p.quantity) || 0,
+      length: p.type === 'sheet' ? parseFloat(p.length) || 0 : null,
+      width: p.type === 'sheet' ? parseFloat(p.width) || 0 : null,
+      squareMeters: p.type === 'sheet' ? (parseFloat(p.length) * parseFloat(p.width)) || 0 : 0,
+      pricePerUnit: parseFloat(p.unitPrice) || 0,
+      amount: (parseFloat(p.squareMeters) || 0) * (parseFloat(p.unitPrice) || 0) * (parseFloat(p.quantity) || 0)
+    })),
+    subTotal: subTotal || 0,
+    taxRate: businessSettings.taxRate || 0,
+    taxAmount: taxAmount || 0,
+    totalAmount: totalWithTax || 0,
+    totalPaid: paidAmount || 0,
+    finalDue: finalDue || 0,
+    totalSquareMeters: totalSquareMeters || 0,
+    salespersonName: salespersons.find(s => s.id === selectedInvoiceSalesperson)?.name || null,
+    commissionAmount: commissionAmount || 0,
+  };
+
+  // Validate required fields
+  if (
+    isNaN(invoicePreviewData.taxRate) ||
+    isNaN(invoicePreviewData.taxAmount) ||
+    isNaN(invoicePreviewData.totalAmount) ||
+    isNaN(invoicePreviewData.totalPaid) ||
+    isNaN(invoicePreviewData.finalDue)
+  ) {
+    showMessage("Invalid invoice data. Please check the numbers.");
+    return;
+  }
+
+  generatePrintableInvoice(invoicePreviewData);
+};
 
     return (
       <div className="p-4 md:p-6">
         <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Create New Invoice</h2>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8">
           <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Invoice Details</h3>
-          <div className="mb-4">
-            <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Customer:</label>
-            <select id="customer-select" value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700">
-              <option value="">-- Select a Customer --</option>
-              {customers.map(customer => (<option key={customer.id} value={customer.id}>{customer.name}</option>))}
-            </select>
-          </div>
-          <div className="mb-6">
-            <label htmlFor="order-load-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Load Products from Existing Order (Optional):</label>
-            <select id="order-load-select" value={selectedOrderIdForInvoice} onChange={(e) => handleSelectOrderForInvoice(e.target.value)} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 dark:bg-gray-700">
-              <option value="">-- Select an Order --</option>
-              {orders.map(order => (<option key={order.id} value={order.id}>{order.orderNumber} ({order.customerName})</option>))}
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Customer:</label>
+                <select id="customer-select" value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700">
+                  <option value="">-- Select a Customer --</option>
+                  {customers.map(customer => (<option key={customer.id} value={customer.id}>{customer.name}</option>))}
+                </select>
+            </div>
+            <div>
+              <label htmlFor="invoice-salesperson-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Salesperson (Optional):</label>
+              <select id="invoice-salesperson-select" value={selectedInvoiceSalesperson} onChange={(e) => setSelectedInvoiceSalesperson(e.target.value)} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700">
+                <option value="">-- Select Salesperson --</option>
+                {salespersons.map(sp => (<option key={sp.id} value={sp.id}>{sp.name}</option>))}
+              </select>
+            </div>
           </div>
           <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">Products</h4>
           {invoiceProducts.map((item) => (
@@ -1473,7 +1831,7 @@ function App() {
               <div className="md:col-span-2 lg:col-span-2"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Product (GSM)</label>
                 <select value={item.productId} onChange={(e) => handleInvoiceProductChange(item.id, 'productId', e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-gray-600">
                   <option value="">Select Product</option>
-                  {products.map(product => (<option key={product.id} value={product.id}>{product.gsm} ({product.type}) (Stock: {product.stock})</option>))}
+                  {products.map(product => (<option key={product.id} value={product.id}>{product.gsm} ({product.type})</option>))}
                 </select>
               </div>
               <div className="lg:col-span-1"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Qty ({item.type === 'sheet' ? 'Rolls' : 'Pcs'})</label><input type="number" value={item.quantity} onChange={(e) => handleInvoiceProductChange(item.id, 'quantity', e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-600" placeholder="Qty"/></div>
@@ -1501,10 +1859,11 @@ function App() {
             <div className="flex justify-end items-center gap-4 mb-1"><label htmlFor="total-paid" className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Paid:</label><input id="total-paid" type="number" value={totalPaid} onChange={(e) => setTotalPaid(e.target.value)} className="p-2 border border-gray-300 dark:border-gray-600 rounded-md text-md font-semibold text-green-600 w-36 text-right bg-gray-50 dark:bg-gray-700" placeholder="0.00"/></div>
             <div className="flex justify-end items-center gap-4 mb-1"><span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Amount:</span><span className="text-lg font-bold text-blue-600 dark:text-blue-400">৳ {totalWithTax.toFixed(2)}</span></div>
             <div className="flex justify-end items-center gap-4 mt-2"><span className="text-sm font-medium text-gray-700 dark:text-gray-300">Final Due:</span><span className="text-lg font-bold text-red-600 dark:text-red-400">৳ {finalDue.toFixed(2)}</span></div>
+            {commissionAmount > 0 && <div className="flex justify-end items-center gap-4 mt-2"><span className="text-sm font-medium text-gray-700 dark:text-gray-300">Commission:</span><span className="text-md font-semibold text-gray-800 dark:text-gray-100">৳ {commissionAmount.toFixed(2)}</span></div>}
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 mt-8">
-            <button onClick={handleGenerateInvoice} className="flex-1 bg-purple-600 text-white p-3 rounded-md text-md font-semibold hover:bg-purple-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || userRole !== 'admin'}>{pageLoading ? 'Generating...' : 'Generate Invoice & Save'}</button>
+            <button onClick={handleGenerateInvoice} className="flex-1 bg-purple-600 text-white p-3 rounded-md text-md font-semibold hover:bg-purple-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || (userRole !== 'admin' && userRole !== 'super_admin')}>{pageLoading ? 'Generating...' : 'Generate Invoice & Save'}</button>
             <button onClick={handlePrintPreview} className="flex-1 bg-gray-600 text-white p-3 rounded-md text-md font-semibold hover:bg-gray-700 transition duration-300 ease-in-out shadow-lg">Print Preview</button>
           </div>
         </div>
@@ -1531,10 +1890,9 @@ function App() {
 
     const exportInvoicesToCSV = () => {
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Invoice No.,Date,Customer,Total Amount (৳),Paid (৳),Due (৳),Tax Rate (%),Tax Amount (৳),Ref Order No.\n";
+      csvContent += "Invoice No.,Date,Customer,Salesperson,Total Amount (৳),Commission (৳),Paid (৳),Due (৳)\n";
       filteredInvoices.forEach(invoice => {
-        const sourceOrder = invoice.sourceOrderId ? orders.find(o => o.id === invoice.sourceOrderId) : null;
-        csvContent += `${invoice.invoiceNumber},${new Date(invoice.invoiceDate).toLocaleDateString()},"${invoice.customerName}",${invoice.totalAmount.toFixed(2)},${invoice.totalPaid.toFixed(2)},${invoice.finalDue.toFixed(2)},${(invoice.taxRate || 0).toFixed(1)},${invoice.taxAmount.toFixed(2)},${sourceOrder ? sourceOrder.orderNumber : '-'}\n`;
+        csvContent += `${invoice.invoiceNumber},${new Date(invoice.invoiceDate).toLocaleDateString()},"${invoice.customerName}",${invoice.salespersonName || '-'},${invoice.totalAmount.toFixed(2)},${(invoice.commissionAmount || 0).toFixed(2)},${invoice.totalPaid.toFixed(2)},${invoice.finalDue.toFixed(2)}\n`;
       });
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
@@ -1566,6 +1924,7 @@ function App() {
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Inv. No.</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Date</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Customer</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Salesperson</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Total (৳)</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Paid (৳)</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Due (৳)</th>
@@ -1579,6 +1938,7 @@ function App() {
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap">{invoice.invoiceNumber}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap">{new Date(invoice.invoiceDate).toLocaleDateString()}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{invoice.customerName}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{invoice.salespersonName || '-'}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳{invoice.totalAmount.toFixed(2)}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳{invoice.totalPaid.toFixed(2)}</td>
                     <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳{invoice.finalDue.toFixed(2)}</td>
@@ -1589,12 +1949,12 @@ function App() {
                       >
                         PDF
                       </button>
-                      <button onClick={() => handleEditInvoice(invoice)} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 mr-1 transition-colors" disabled={userRole !== 'admin'}>Edit/Pay</button>
-                      <button onClick={() => handleDeleteInvoice(invoice.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={userRole !== 'admin'}>Delete</button>
+                      <button onClick={() => handleEditInvoice(invoice)} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 mr-1 transition-colors" disabled={(userRole !== 'admin' && userRole !== 'super_admin')}>Edit/Pay</button>
+                      <button onClick={() => handleDeleteInvoice(invoice.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={(userRole !== 'admin' && userRole !== 'super_admin')}>Delete</button>
                     </td>
                   </tr>
                   {editingInvoice && editingInvoice.id === invoice.id && (
-                    <tr className="bg-indigo-50 dark:bg-indigo-900/30"><td colSpan="7" className="p-4">
+                    <tr className="bg-indigo-50 dark:bg-indigo-900/30"><td colSpan="8" className="p-4">
                       <h4 className="text-md font-semibold mb-3 text-gray-800 dark:text-gray-100">Add Payment to Invoice: {editingInvoice.invoiceNumber}</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 items-end">
                         <div><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Current Total Paid (৳)</label><input type="number" value={editingInvoice.totalPaid.toFixed(2)} readOnly className="p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm w-full bg-gray-100 dark:bg-gray-700"/></div>
@@ -1618,227 +1978,6 @@ function App() {
                 <button key={page} onClick={() => setCurrentInvoicePage(page)} className={`px-3 py-1 rounded-md text-sm ${currentInvoicePage === page ? 'bg-indigo-600 text-white font-semibold' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'} transition-colors`}>{page}</button>
               ))}
               <button onClick={() => setCurrentInvoicePage(prev => Math.min(totalPages, prev + 1))} disabled={currentInvoicePage === totalPages} className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors">Next</button>
-          </div>)}
-        </div>
-      </div>
-    );
-  };
-  const renderCreateOrder = () => {
-    console.log("[Render] renderCreateOrder called");
-    const totalOrderAmount = orderProducts.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
-    const selectedSalespersonDetails = salespersons.find(s => s.id === selectedOrderTaker);
-    
-    let commissionDisplayInfo = '';
-    let commissionAmount = 0;
-
-    if (selectedSalespersonDetails && selectedSalespersonDetails.commission) {
-        if (selectedSalespersonDetails.commission.type === "percentage") {
-            commissionAmount = totalOrderAmount * ((selectedSalespersonDetails.commission.percentageRate || 0) / 100);
-            commissionDisplayInfo = `(${selectedSalespersonDetails.commission.percentageRate}%)`;
-        } else if (selectedSalespersonDetails.commission.type === "fixed") {
-            commissionAmount = orderProducts.reduce((acc, p) => {
-                let itemCommission = 0;
-                const productDetails = products.find(prod => prod.id === p.productId); 
-                if (productDetails) { 
-                    if (productDetails.type === 'sheet' && selectedSalespersonDetails.commission.fixedSheetRate != null) { 
-                        const quantity = parseFloat(p.quantity);
-                        const squareMeters = p.squareMeters; 
-                        if(!isNaN(quantity) && !isNaN(squareMeters)) {
-                             itemCommission = quantity * squareMeters * selectedSalespersonDetails.commission.fixedSheetRate;
-                        }
-                    } else if (productDetails.type === 'bag' && selectedSalespersonDetails.commission.fixedBagRate != null) { 
-                        const quantity = parseFloat(p.quantity);
-                        if(!isNaN(quantity)) {
-                            itemCommission = quantity * selectedSalespersonDetails.commission.fixedBagRate;
-                        }
-                    }
-                }
-                return acc + itemCommission;
-            }, 0);
-            commissionDisplayInfo = '(Fixed Rates Applied)';
-        }
-    }
-
-
-    return (
-      <div className="p-4 md:p-6">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Create New Order</h2>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8">
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Order Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label htmlFor="order-customer-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Customer:</label>
-              <select id="order-customer-select" value={selectedOrderCustomer} onChange={(e) => setSelectedOrderCustomer(e.target.value)} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700">
-                <option value="">-- Select a Customer --</option>
-                {customers.map(customer => (<option key={customer.id} value={customer.id}>{customer.name}</option>))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="order-taker-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Order Taker (Salesperson):</label>
-              <select id="order-taker-select" value={selectedOrderTaker} onChange={(e) => setSelectedOrderTaker(e.target.value)} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700">
-                <option value="">-- Select Salesperson --</option>
-                {salespersons.map(sp => {
-                    let commissionDisplay = '';
-                    if (sp.commission?.type === 'percentage') {
-                        commissionDisplay = `${sp.commission.percentageRate}%`;
-                    } else if (sp.commission?.type === 'fixed') {
-                        let rates = [];
-                        if (sp.commission.fixedSheetRate != null) rates.push(`Sheet: ৳${sp.commission.fixedSheetRate}/sqm`);
-                        if (sp.commission.fixedBagRate != null) rates.push(`Bag: ৳${sp.commission.fixedBagRate}/pc`);
-                        commissionDisplay = rates.join(', ') || 'Fixed (No rates set)';
-                    } else {
-                        commissionDisplay = 'N/A';
-                    }
-                    return (<option key={sp.id} value={sp.id}>{sp.name} ({commissionDisplay})</option>)
-                })}
-              </select>
-            </div>
-          </div>
-
-          <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3 mt-6">Products for Order</h4>
-          {orderProducts.map((item) => (
-            <div key={item.id} className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-x-4 gap-y-2 mb-4 p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700/50 items-end">
-              <div className="md:col-span-2 lg:col-span-2"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Product (GSM)</label>
-                <select value={item.productId} onChange={(e) => handleOrderProductChange(item.id, 'productId', e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white dark:bg-gray-600">
-                  <option value="">Select Product</option>
-                  {products.map(product => (<option key={product.id} value={product.id}>{product.gsm} ({product.type}) (Stock: {product.stock})</option>))}
-                </select>
-              </div>
-              <div className="lg:col-span-1"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Qty ({item.type === 'sheet' ? 'Rolls' : 'Pcs'})</label><input type="number" value={item.quantity} onChange={(e) => handleOrderProductChange(item.id, 'quantity', e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-600" placeholder="Qty"/></div>
-              {item.type === 'sheet' && (<>
-                <div className="lg:col-span-1"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Length (m)</label><input type="number" value={item.length} onChange={(e) => handleOrderProductChange(item.id, 'length', e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-600" placeholder="L"/></div>
-                <div className="lg:col-span-1"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Width (m)</label><input type="number" value={item.width} onChange={(e) => handleOrderProductChange(item.id, 'width', e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-600" placeholder="W"/></div>
-                <div className="lg:col-span-1"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Sq. Meters</label><input type="text" value={item.squareMeters ? item.squareMeters.toFixed(2) : '0.00'} readOnly className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-gray-100 dark:bg-gray-500"/></div>
-              </>)}
-              {item.type === 'bag' && <div className="md:col-span-2 lg:col-span-3"></div>}
-              <div className="lg:col-span-1"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Unit Price (৳)</label>
-                <input type="number" value={item.unitPrice} onChange={(e) => handleOrderProductChange(item.id, 'unitPrice', e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-600"/>
-              </div>
-              <div className="lg:col-span-1"><label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Line Total (৳)</label><input type="text" value={`৳ ${item.lineTotal ? item.lineTotal.toFixed(2) : '0.00'}`} readOnly className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-gray-100 dark:bg-gray-500 font-semibold"/></div>
-              <button onClick={() => removeOrderProductRow(item.id)} className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition duration-300 ease-in-out text-sm self-end h-10">Remove</button>
-            </div>
-          ))}
-          <button onClick={addOrderProductRow} className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition duration-300 ease-in-out text-sm mb-4">Add Product Row</button>
-          
-          <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 text-right">
-            <p className="text-md font-medium text-gray-700 dark:text-gray-300">Total Order Amount: <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">৳ {totalOrderAmount.toFixed(2)}</span></p>
-            {selectedOrderTaker && <p className="text-sm text-gray-600 dark:text-gray-400">Salesperson Commission {commissionDisplayInfo}: <span className="font-semibold">৳ {commissionAmount.toFixed(2)}</span></p>}
-          </div>
-
-          <button onClick={handleCreateOrder} className="w-full mt-8 bg-orange-600 text-white p-3 rounded-md text-lg font-semibold hover:bg-orange-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || userRole !== 'admin'}>{pageLoading ? 'Creating Order...' : 'Create Order & Update Stock'}</button>
-        </div>
-      </div>
-    );
-  };
-  const renderOrders = () => {
-    console.log("[Render] renderOrders called");
-    const filteredOrders = orders.filter(order => {
-        const matchesSearch = order.orderNumber.toLowerCase().includes(orderSearchQuery.toLowerCase()) || order.customerName.toLowerCase().includes(orderSearchQuery.toLowerCase());
-        const orderDate = new Date(order.orderDate);
-        const startDate = orderStartDateFilter ? new Date(orderStartDateFilter) : null;
-        const endDate = orderEndDateFilter ? new Date(orderEndDateFilter) : null;
-        if (startDate) startDate.setHours(0,0,0,0);
-        if (endDate) endDate.setHours(23,59,59,999);
-        const matchesDateRange = (!startDate || orderDate >= startDate) && (!endDate || orderDate <= endDate);
-        return (orderStatusFilter === 'All' || order.status === orderStatusFilter) && matchesSearch && matchesDateRange;
-    });
-
-    const indexOfLastItem = currentOrderPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-
-    const exportOrdersToCSV = () => {
-      let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Order No.,Date,Customer,Order Taker,Total Amount (৳),Commission (৳),Status\n";
-      filteredOrders.forEach(order => {
-        csvContent += `${order.orderNumber},${new Date(order.orderDate).toLocaleDateString()},"${order.customerName}",${order.orderTakerName || '-'},${order.totalAmount.toFixed(2)},${order.commissionAmount ? order.commissionAmount.toFixed(2) : '0.00'},${order.status}\n`;
-      });
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "orders_report.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    };
-
-    return (
-      <div className="p-4 md:p-6">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">All Orders</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <input type="text" placeholder="Search by Order No. or Customer" value={orderSearchQuery} onChange={(e) => {setOrderSearchQuery(e.target.value); setCurrentOrderPage(1);}} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700"/>
-            <select value={orderStatusFilter} onChange={(e) => {setOrderStatusFilter(e.target.value); setCurrentOrderPage(1);}} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700">
-                <option value="All">All Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-            </select>
-            <input type="date" value={orderStartDateFilter} onChange={(e) => {setOrderStartDateFilter(e.target.value); setCurrentOrderPage(1);}} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700" title="Start Date"/>
-            <input type="date" value={orderEndDateFilter} onChange={(e) => {setOrderEndDateFilter(e.target.value); setCurrentOrderPage(1);}} className="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 dark:bg-gray-700" title="End Date"/>
-        </div>
-        <div className="mb-4 flex justify-end">
-            <button onClick={exportOrdersToCSV} className="bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out shadow-lg">Export CSV</button>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-2 md:p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Existing Orders</h3>
-          {currentItems.length === 0 ? <p className="text-gray-600 dark:text-gray-300">No orders found.</p> : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg">
-                <thead className="bg-gray-100 dark:bg-gray-700">
-                  <tr>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Order No.</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Customer</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Order Taker</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Total (৳)</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Commission (৳)</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Products</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {currentItems.map((order) => (
-                  <React.Fragment key={order.id}>
-                  <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap">{order.orderNumber}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap">{new Date(order.orderDate).toLocaleDateString()}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{order.customerName}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">{order.orderTakerName || '-'}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳{order.totalAmount.toFixed(2)}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">৳{(order.commissionAmount || 0).toFixed(2)}</td>
-                    <td className="py-3 px-4 text-sm">
-                        <select value={order.status} onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)} className="p-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-indigo-500" disabled={userRole !== 'admin'}>
-                            <option value="Pending">Pending</option>
-                            <option value="Processing">Processing</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Cancelled">Cancelled</option>
-                        </select>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-800 dark:text-gray-200">
-                        <ul className="list-disc list-inside text-xs">
-                            {order.products.map((p, idx) => ( <li key={idx}>{p.gsm} ({p.quantity} {p.type === 'sheet' ? 'Rolls' : 'Pcs'})</li> ))}
-                        </ul>
-                    </td>
-                    <td className="py-3 px-4 text-sm whitespace-nowrap">
-                      {/* <button onClick={() => handleEditOrder(order)} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 mr-1 transition-colors" disabled={userRole !== 'admin'}>Edit</button> */}
-                      <button onClick={() => handleDeleteOrder(order.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={userRole !== 'admin'}>Delete</button>
-                    </td>
-                  </tr>
-                  </React.Fragment>
-                ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {totalPages > 1 && (<div className="flex justify-center items-center mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-x-1">
-              <button onClick={() => setCurrentOrderPage(prev => Math.max(1, prev - 1))} disabled={currentOrderPage === 1} className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors">Prev</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button key={page} onClick={() => setCurrentOrderPage(page)} className={`px-3 py-1 rounded-md text-sm ${currentOrderPage === page ? 'bg-indigo-600 text-white font-semibold' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'} transition-colors`}>{page}</button>
-              ))}
-              <button onClick={() => setCurrentOrderPage(prev => Math.min(totalPages, prev + 1))} disabled={currentOrderPage === totalPages} className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors">Next</button>
           </div>)}
         </div>
       </div>
@@ -1903,7 +2042,7 @@ function App() {
               </div>
             </div>
           )}
-          <button onClick={handleAddSalesperson} className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || userRole !== 'admin'}>{pageLoading ? 'Adding...' : 'Add Salesperson'}</button>
+          <button onClick={handleAddSalesperson} className="w-full bg-blue-600 text-white p-3 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || (userRole !== 'admin' && userRole !== 'super_admin')}>{pageLoading ? 'Adding...' : 'Add Salesperson'}</button>
         </div>
 
         <div className="mb-4 flex justify-end">
@@ -1929,7 +2068,7 @@ function App() {
                                 : 'N/A'}
                         </td>
                         <td className="py-3 px-4 text-sm whitespace-nowrap">
-                            <button onClick={() => handleDeleteSalesperson(sp.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={userRole !== 'admin'}>Delete</button>
+                            <button onClick={() => handleDeleteSalesperson(sp.id)} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 transition-colors" disabled={(userRole !== 'admin' && userRole !== 'super_admin')}>Delete</button>
                         </td>
                     </tr>))}
                 </tbody>
@@ -1964,7 +2103,6 @@ function App() {
         const { name, value } = e.target;
         let processedValue = value;
         if (name === "taxRate") processedValue = parseFloat(value) || 0;
-        if (name === "lowStockThreshold") processedValue = parseInt(value) || 0;
         setTempBusinessSettings(prev => ({ ...prev, [name]: processedValue }));
     };
     
@@ -1972,7 +2110,7 @@ function App() {
       <div className="p-4 md:p-6">
         <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Application Settings</h2>
         
-        {userRole === 'admin' && (
+        {(userRole === 'admin' || userRole === 'super_admin') && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md mb-8">
           <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-4">Business Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2000,17 +2138,20 @@ function App() {
               <label htmlFor="taxRate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Tax Rate (%)</label>
               <input type="number" id="taxRate" name="taxRate" value={tempBusinessSettings.taxRate || 0} onChange={handleSettingChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"/>
             </div>
-            <div>
-              <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Low Stock Threshold</label>
-              <input type="number" id="lowStockThreshold" name="lowStockThreshold" value={tempBusinessSettings.lowStockThreshold || 0} onChange={handleSettingChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"/>
-            </div>
              <div className="md:col-span-2">
               <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Logo URL</label>
               <input type="text" id="logoUrl" name="logoUrl" value={tempBusinessSettings.logoUrl || ''} onChange={handleSettingChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700"/>
             </div>
+            <div className="md:col-span-2">
+              <label htmlFor="defaultBankAccountId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Bank for Invoices</label>
+                <select id="defaultBankAccountId" name="defaultBankAccountId" value={tempBusinessSettings.defaultBankAccountId || ''} onChange={handleSettingChange} className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700">
+                  <option value="">-- None --</option>
+                  {bankAccounts.map(account => (<option key={account.id} value={account.id}>{account.bankName} - {account.accountNumber}</option>))}
+                </select>
+            </div>
           </div>
           <div className="mt-6">
-            <button onClick={handleUpdateSettings} className="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || userRole !== 'admin'}>
+            <button onClick={handleUpdateSettings} className="w-full bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition duration-300 ease-in-out shadow-lg" disabled={pageLoading || (userRole !== 'admin' && userRole !== 'super_admin')}>
               {pageLoading ? 'Saving...' : 'Save Business Settings'}
             </button>
           </div>
@@ -2076,11 +2217,10 @@ function App() {
                           defaultValue={user.role} 
                           onChange={(e) => handleUpdateUserStatusAndRole(user.uid, user.status, e.target.value)}
                           className="p-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-indigo-500"
-                          disabled={userRole !== 'admin'}
+                          disabled={userRole !== 'super_admin'}
                         >
                           <option value="admin">Admin</option>
-                          <option value="customer">Customer</option>
-                          <option value="viewer">Viewer</option>
+                          <option value="super_admin">Super Admin</option>
                           <option value="pending_approval" disabled>Pending Approval</option>
                         </select>
                       </td>
@@ -2096,13 +2236,13 @@ function App() {
                       </td>
                       <td className="py-3 px-4 text-sm whitespace-nowrap">
                         {user.status !== 'approved' && (
-                          <button onClick={() => handleUpdateUserStatusAndRole(user.uid, 'approved', user.role === 'pending_approval' ? 'customer' : user.role)} className="bg-green-500 text-white px-2 py-1 rounded-md text-xs hover:bg-green-600 mr-1 transition-colors" disabled={userRole !== 'admin'}>Approve</button>
+                          <button onClick={() => handleUpdateUserStatusAndRole(user.uid, 'approved', user.role === 'pending_approval' ? 'admin' : user.role)} className="bg-green-500 text-white px-2 py-1 rounded-md text-xs hover:bg-green-600 mr-1 transition-colors" disabled={userRole !== 'super_admin'}>Approve</button>
                         )}
                         {user.status !== 'rejected' && (
-                          <button onClick={() => handleUpdateUserStatusAndRole(user.uid, 'rejected', 'viewer')} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 mr-1 transition-colors" disabled={userRole !== 'admin'}>Reject</button>
+                          <button onClick={() => handleUpdateUserStatusAndRole(user.uid, 'rejected', 'admin')} className="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600 mr-1 transition-colors" disabled={userRole !== 'super_admin'}>Reject</button>
                         )}
                          {user.status === 'rejected' && (
-                          <button onClick={() => handleUpdateUserStatusAndRole(user.uid, 'pending', 'pending_approval')} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 transition-colors" disabled={userRole !== 'admin'}>Re-Pend</button>
+                          <button onClick={() => handleUpdateUserStatusAndRole(user.uid, 'pending', 'admin')} className="bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600 transition-colors" disabled={userRole !== 'super_admin'}>Re-Pend</button>
                         )}
                       </td>
                     </tr>
@@ -2186,17 +2326,16 @@ function App() {
 
 
   const navItems = [
-    { name: 'Dashboard', page: 'dashboard', icon: <HomeIcon />, roles: ['admin', 'customer'] },
-    { name: 'Customers', page: 'customers', icon: <UsersIcon />, roles: ['admin'] },
-    { name: 'Products', page: 'products', icon: <PackageIcon />, roles: ['admin'] },
-    { name: 'Create Invoice', page: 'createInvoice', icon: <DocumentPlusIcon />, roles: ['admin'] },
-    { name: 'All Invoices', page: 'invoices', icon: <DocumentTextIcon />, roles: ['admin', 'customer'] }, 
-    { name: 'Create Order', page: 'createOrder', icon: <PlusCircleIcon />, roles: ['admin'] },
-    { name: 'All Orders', page: 'orders', icon: <ClipboardDocumentListIcon />, roles: ['admin', 'customer'] }, 
-    { name: 'Salespersons', page: 'salespersons', icon: <UserGroupIcon />, roles: ['admin'] }, 
-    { name: 'Reports', page: 'reports', icon: <ChartBarIcon />, roles: ['admin'] },
-    { name: 'User Management', page: 'userManagement', icon: <UserGroupIcon/>, roles: ['admin'] }, 
-    { name: 'Settings', page: 'settings', icon: <CogIcon />, roles: ['admin', 'customer'] }, 
+    { name: 'Dashboard', page: 'dashboard', icon: <HomeIcon />, roles: ['admin', 'super_admin'] },
+    { name: 'Customers', page: 'customers', icon: <UsersIcon />, roles: ['admin', 'super_admin'] },
+    { name: 'Products', page: 'products', icon: <PackageIcon />, roles: ['admin', 'super_admin'] },
+    { name: 'Create Invoice', page: 'createInvoice', icon: <DocumentPlusIcon />, roles: ['admin', 'super_admin'] },
+    { name: 'All Invoices', page: 'invoices', icon: <DocumentTextIcon />, roles: ['admin', 'super_admin'] }, 
+    { name: 'Salespersons', page: 'salespersons', icon: <UserGroupIcon />, roles: ['admin', 'super_admin'] }, 
+    { name: 'Bank Details', page: 'bankAccounts', icon: <BankIcon />, roles: ['admin', 'super_admin'] },
+    { name: 'Reports', page: 'reports', icon: <ChartBarIcon />, roles: ['admin', 'super_admin'] },
+    { name: 'User Management', page: 'userManagement', icon: <UserGroupIcon/>, roles: ['super_admin'] }, 
+    { name: 'Settings', page: 'settings', icon: <CogIcon />, roles: ['admin', 'super_admin'] }, 
   ];
 
   const доступныеNavItems = navItems.filter(item => item.roles.includes(userRole));
@@ -2277,16 +2416,15 @@ function App() {
           {userId && !pageLoading && !error && userAccountStatus === 'approved' && (
             <>
               {currentPage === 'dashboard' && renderDashboard()}
-              {currentPage === 'customers' && userRole === 'admin' && renderCustomers()}
-              {currentPage === 'products' && userRole === 'admin' && renderProducts()}
-              {currentPage === 'createInvoice' && userRole === 'admin' && renderCreateInvoice()}
-              {currentPage === 'invoices' && (userRole === 'admin' || userRole === 'customer') && renderInvoices()}
-              {currentPage === 'createOrder' && userRole === 'admin' && renderCreateOrder()}
-              {currentPage === 'orders' && (userRole === 'admin' || userRole === 'customer') && renderOrders()}
-              {currentPage === 'salespersons' && userRole === 'admin' && renderSalespersons()}
-              {currentPage === 'reports' && userRole === 'admin' && renderReports()}
-              {currentPage === 'settings' && (userRole === 'admin' || userRole === 'customer') && renderSettings()}
-              {currentPage === 'userManagement' && userRole === 'admin' && renderUserManagement()}
+              {currentPage === 'customers' && (userRole === 'admin' || userRole === 'super_admin') && renderCustomers()}
+              {currentPage === 'products' && (userRole === 'admin' || userRole === 'super_admin') && renderProducts()}
+              {currentPage === 'createInvoice' && (userRole === 'admin' || userRole === 'super_admin') && renderCreateInvoice()}
+              {currentPage === 'invoices' && (userRole === 'admin' || userRole === 'super_admin') && renderInvoices()}
+              {currentPage === 'salespersons' && (userRole === 'admin' || userRole === 'super_admin') && renderSalespersons()}
+              {currentPage === 'bankAccounts' && (userRole === 'admin' || userRole === 'super_admin') && renderBankAccounts()}
+              {currentPage === 'reports' && (userRole === 'admin' || userRole === 'super_admin') && renderReports()}
+              {currentPage === 'settings' && (userRole === 'admin' || userRole === 'super_admin') && renderSettings()}
+              {currentPage === 'userManagement' && userRole === 'super_admin' && renderUserManagement()}
             </>
           )}
         </main>
