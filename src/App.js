@@ -26,7 +26,7 @@ import {
   getDoc 
 } from 'firebase/firestore';
 
-// Recharts imports for charting
+// Recharts imports for charting nigga nigaa
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
