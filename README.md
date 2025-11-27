@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# BTTAL App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Modular React app with Firebase (Auth/Firestore), Tailwind, and Jest tests. The codebase has been refactored into cohesive modules for maintainability and testability.
 
 ## Available Scripts
 
@@ -16,8 +16,11 @@ You may also see any lint errors in the console.
 
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Runs the test suite once:
+
+```
+npm test -- --watchAll=false
+```
 
 ### `npm run build`
 
@@ -29,6 +32,22 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
+### `npm run lint`
+
+Run ESLint on `src`:
+
+```
+npm run lint
+```
+
+### `npm run format`
+
+Format the repo with Prettier:
+
+```
+npm run format
+```
+
 ### `npm run eject`
 
 **Note: this is a one-way operation. Once you `eject`, you can't go back!**
@@ -39,11 +58,34 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-## Learn More
+## Project Structure
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+src/
+	components/
+		bank/BankAccounts.js
+		customers/Customers.js
+		invoices/{CreateInvoice.js, InvoicesList.js}
+		products/Products.js
+		salespersons/Salespersons.js
+		reports/{Reports.js, CommissionReport.js, CustomerSpendingReport.js}
+		settings/Settings.js
+		users/UserManagement.js
+		layout/{Sidebar.js, Header.js}
+		common/Toast.js
+	services/firebase.js
+	utils/{id.js, invoice.js}
+	App.js
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Testing Notes
+
+- Jest mocks `firebase/auth` and `./services/firebase` in `src/setupTests.js` to avoid real SDK init and act warnings.
+- Core utility tests live in `src/utils/invoice.test.js`.
+
+## Firebase
+
+Firebase init is centralized in `src/services/firebase.js` and used across the app. Paths are namespaced under `artifacts/{appId}/users/{userId}/...`.
 
 ### Code Splitting
 
@@ -68,4 +110,5 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
 # bttalapp
