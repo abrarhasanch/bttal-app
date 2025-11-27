@@ -45,24 +45,46 @@ The codebase is organized using a modern **feature-based folder structure**.
 ## Project Structure
 
 ```
-src/
-  components/
-    bank/
-    customers/
-    invoices/
-    products/
-    salespersons/
-    reports/
-    settings/
-    users/
-    layout/
-    common/
-  services/
-    firebase.js
-  utils/
-    invoice.js
-    id.js
-  App.js
+.bttal-app/
+├── .vscode/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── bank/BankAccounts.js
+│   │   ├── customers/Customers.js
+│   │   ├── invoices/
+│   │   │   ├── CreateInvoice.js
+│   │   │   └── InvoicesList.js
+│   │   ├── products/Products.js
+│   │   ├── salespersons/Salespersons.js
+│   │   ├── reports/
+│   │   │   ├── Reports.js
+│   │   │   ├── CommissionReport.js
+│   │   │   └── CustomerSpendingReport.js
+│   │   ├── settings/Settings.js
+│   │   ├── users/UserManagement.js
+│   │   ├── layout/
+│   │   │   ├── Sidebar.js
+│   │   │   └── Header.js
+│   │   └── common/Toast.js
+│   ├── services/firebase.js
+│   ├── utils/
+│   │   ├── id.js
+│   │   └── invoice.js
+│   └── App.js
+├── .eslintrc.json
+├── .gitignore
+├── .prettierignore
+├── .prettierrc
+├── README.md
+├── netlify.toml
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+└── yarn.lock
+
+
 ```
 
 ---
