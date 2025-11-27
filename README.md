@@ -1,114 +1,234 @@
 # BTTAL App
 
-Modular React app with Firebase (Auth/Firestore), Tailwind, and Jest tests. The codebase has been refactored into cohesive modules for maintainability and testability.
+A modular React application for internal business invoicing, built with Firebase Authentication, Firestore database, and TailwindCSS. Designed for maintainability, clean structure, and scalability.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## About
 
-### `npm start`
+BTTAL App is a fully functional invoicing and business management dashboard. It supports:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+* Customer and product management
+* Invoice creation & tracking
+* Bank account and payment records
+* Salesperson & commission reporting
+* User management and settings
+* Firebase authentication & Firestore persistence
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The codebase is organized using a modern **feature-based folder structure**.
 
-### `npm test`
+---
 
-Runs the test suite once:
+## Key Features
 
-```
-npm test -- --watchAll=false
-```
+* Customer & product management
+* Generate and manage invoices
+* Track bank accounts and payments
+* Salespersons & commission tracking
+* User roles & management
+* Firebase Auth + Firestore
+* TailwindCSS UI
+* Jest unit tests
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Tech Stack
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+* **React** (Create React App)
+* **Firebase** (Auth, Firestore)
+* **TailwindCSS**
+* **Jest** for testing
+* **ESLint + Prettier**
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run lint`
-
-Run ESLint on `src`:
-
-```
-npm run lint
-```
-
-### `npm run format`
-
-Format the repo with Prettier:
-
-```
-npm run format
-```
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
 ## Project Structure
 
 ```
 src/
-	components/
-		bank/BankAccounts.js
-		customers/Customers.js
-		invoices/{CreateInvoice.js, InvoicesList.js}
-		products/Products.js
-		salespersons/Salespersons.js
-		reports/{Reports.js, CommissionReport.js, CustomerSpendingReport.js}
-		settings/Settings.js
-		users/UserManagement.js
-		layout/{Sidebar.js, Header.js}
-		common/Toast.js
-	services/firebase.js
-	utils/{id.js, invoice.js}
-	App.js
+  components/
+    bank/
+    customers/
+    invoices/
+    products/
+    salespersons/
+    reports/
+    settings/
+    users/
+    layout/
+    common/
+  services/
+    firebase.js
+  utils/
+    invoice.js
+    id.js
+  App.js
 ```
+
+---
+
+## ScreenShots:
+### Login Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 35 51 PM" src="https://github.com/user-attachments/assets/b7dfcc8e-2d52-4425-b211-39786eeea21c" />
+
+### Dashboard
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 36 01 PM" src="https://github.com/user-attachments/assets/9288cef8-338a-4564-81de-54d31b13749c" />
+
+### Dashboard (Dark Mode)
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 36 08 PM" src="https://github.com/user-attachments/assets/385b8b17-a477-424b-9161-7ca2f0c55891" />
+
+### Customers Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 36 20 PM" src="https://github.com/user-attachments/assets/d774e847-4671-423f-b447-30ed21d6bfcf" />
+
+### Products Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 36 28 PM" src="https://github.com/user-attachments/assets/323860ea-fe0f-481e-b016-e90437de7c37" />
+
+### Create Invoice Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 36 35 PM" src="https://github.com/user-attachments/assets/e611c547-8f81-4205-be02-c65087da14a3" />
+
+### All Invoice Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 36 44 PM" src="https://github.com/user-attachments/assets/6a1e7025-5fa2-4d6f-8362-6a17acb15803" />
+
+### PDF Invoice
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 37 32 PM" src="https://github.com/user-attachments/assets/75e6f1d6-1247-4919-bb0c-c71537c6875d" />
+
+### Salesperson Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 36 51 PM" src="https://github.com/user-attachments/assets/e915e3f0-ae6a-4cf6-9c4b-4d96e2d876bf" />
+
+### Bank Account Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 36 58 PM" src="https://github.com/user-attachments/assets/e1334988-7290-44e9-b6b1-29d26c5017a8" />
+
+### Report Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 37 05 PM" src="https://github.com/user-attachments/assets/1695808f-9316-43e4-899b-4897c614c1fb" />
+
+### User Management Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 37 12 PM" src="https://github.com/user-attachments/assets/6c1a4093-6931-47f4-a75a-762b7d0764da" />
+
+### Settings Page
+
+<img width="1470" height="956" alt="Screenshot 2025-11-27 at 4 37 19 PM" src="https://github.com/user-attachments/assets/31791f88-ed6c-4d68-8a35-4e93a2c86ae8" />
+
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+* Node.js 16+
+* npm or yarn
+
+### Installation
+
+```bash
+git clone https://github.com/abrarhasanch/bttal-app.git
+cd bttal-app
+npm install
+```
+
+---
+
+## Firebase Setup
+
+1. Go to Firebase Console and create a project
+2. Enable:
+
+   * Authentication (Email/Password)
+   * Firestore Database
+3. Create a Web App inside Firebase
+4. Copy your Firebase config
+5. Paste it into `src/services/firebase.js`
+
+### Optional: Environment Variables
+
+Create `.env.local`:
+
+```
+REACT_APP_FIREBASE_API_KEY=
+REACT_APP_FIREBASE_AUTH_DOMAIN=
+REACT_APP_FIREBASE_PROJECT_ID=
+REACT_APP_FIREBASE_STORAGE_BUCKET=
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=
+REACT_APP_FIREBASE_APP_ID=
+```
+
+---
+
+## Available Scripts
+
+| Command          | Description             |
+| ---------------- | ----------------------- |
+| `npm start`      | Run development server  |
+| `npm test`       | Run Jest tests          |
+| `npm run build`  | Build production bundle |
+| `npm run lint`   | Run ESLint              |
+| `npm run format` | Format using Prettier   |
+
+---
 
 ## Testing Notes
 
-- Jest mocks `firebase/auth` and `./services/firebase` in `src/setupTests.js` to avoid real SDK init and act warnings.
-- Core utility tests live in `src/utils/invoice.test.js`.
+* Jest is configured to mock Firebase modules
+* Utility tests are located in `src/utils/`
+* Run all tests with:
 
-## Firebase
+  ```bash
+  npm test
+  ```
 
-Firebase init is centralized in `src/services/firebase.js` and used across the app. Paths are namespaced under `artifacts/{appId}/users/{userId}/...`.
+---
 
-### Code Splitting
+## Deployment Options
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Netlify
 
-### Analyzing the Bundle Size
+* Build command: `npm run build`
+* Publish folder: `build/`
+* Add environment variables from Firebase
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Vercel
 
-### Making a Progressive Web App
+* Import repo
+* Build: `npm run build`
+* Output: `build/`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Firebase Hosting
 
-### Advanced Configuration
+```bash
+firebase init hosting
+npm run build
+firebase deploy
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### GitHub Pages
 
-### Deployment
+(Not ideal for Firebase apps, but possible for static-only builds)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. Fork the repo
+2. Create a feature branch
+3. Commit changes
+4. Open a Pull Request
 
-# bttalapp
+---
+
+## Contact
+
+**Abrar Hasan Chowdhury**
+GitHub: [https://github.com/abrarhasanch](https://github.com/abrarhasanch)
+
